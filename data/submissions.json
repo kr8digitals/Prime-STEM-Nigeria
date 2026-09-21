@@ -1,0 +1,56 @@
+{
+  "contactMessages": [],
+  "registrations": [
+    {
+      "id": 1790009431835,
+      "fullName": "Amina Abubakar",
+      "email": "amina.abubakar@gmail.com",
+      "phone": "+2348123456789",
+      "category": "Parent/Guardian",
+      "program": "STEM Kids Championship",
+      "message": "Registering 12 candidates for the 5th Edition Early Bird.",
+      "status": "Approved",
+      "createdAt": "2026-09-21T17:14:08.186Z"
+    },
+    {
+      "id": 1790009431834,
+      "fullName": "Dr. Chidi Okoli",
+      "email": "drchidi@example.com",
+      "phone": "+2348031234567",
+      "category": "School",
+      "subject": "Partnership Inquiry",
+      "message": "We would like to register 50 candidates for the 5th Edition STEM Kids Championship.",
+      "createdAt": "2026-09-21T16:50:31.834Z"
+    },
+    {
+      "id": 1790009431851,
+      "fullName": "Mrs. Folake Adeleke",
+      "email": "folake@brightstarschool.ng",
+      "phone": "+2348029876543",
+      "category": "School",
+      "program": "STEM Kids Championship",
+      "message": "Registering 25 candidates from Basic 4 to 6.",
+      "createdAt": "2026-09-21T16:50:31.851Z"
+    },
+    {
+      "id": 1790010848186,
+      "fullName": "Amina Abubakar",
+      "email": "amina.abubakar@gmail.com",
+      "phone": "+2348123456789",
+      "category": "Parent/Guardian",
+      "program": "STEM Kids Championship",
+      "message": "Registering 12 candidates for the 5th Edition Early Bird.",
+      "createdAt": "2026-09-21T17:14:08.186Z"
+    },
+    {
+      "id": 1790010857181,
+      "fullName": "Engr. Folake Adeleke",
+      "email": "folake.adeleke@schools.ng",
+      "phone": "+2348055551234",
+      "category": "School Administrator",
+      "subject": "Laptops for Schools Order",
+      "message": "We would like to pre-order 25 laptops under the pay-on-delivery scheme for our STEM laboratory.",
+      "createdAt": "2026-09-21T17:14:17.181Z"
+    }
+  ]
+}
