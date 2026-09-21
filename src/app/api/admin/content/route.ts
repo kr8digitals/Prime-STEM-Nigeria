@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSiteContent, saveSiteContent, getDefaultContent } from "@/lib/content-store";
+import { getSiteContent, saveSiteContent, resetSiteContent } from "@/lib/content-store";
 
 export const dynamic = "force-dynamic";
 
@@ -13,16 +13,16 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     // If reset request
     if (body.action === "reset") {
-      const def = getDefaultContent();
-      const saved = saveSiteContent(def);
-      return NextResponse.json({ success: true, content: saved });
+      const reset = resetSiteContent();
+      return NextResponse.json({ success: true, content: reset });
     }
 
-    // Save modified content
-    const updated = saveSiteContent(body.content || body);
+    // Save modified content (merges with existing)
+    const payload = body.content ? body.content : body;
+    const updated = saveSiteContent(payload);
     return NextResponse.json({ success: true, content: updated });
   } catch (error: any) {
     console.error("Error saving content:", error);

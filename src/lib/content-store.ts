@@ -39,29 +39,43 @@ export function getDefaultContent() {
 
 export function getSiteContent() {
   ensureDir();
+  const def = getDefaultContent();
+
   if (!fs.existsSync(CONTENT_FILE)) {
-    const initial = getDefaultContent();
-    fs.writeFileSync(CONTENT_FILE, JSON.stringify(initial, null, 2), "utf-8");
-    return initial;
+    fs.writeFileSync(CONTENT_FILE, JSON.stringify(def, null, 2), "utf-8");
+    return def;
   }
 
   try {
     const raw = fs.readFileSync(CONTENT_FILE, "utf-8");
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    return {
+      ...def,
+      ...parsed,
+    };
   } catch (err) {
     console.error("Error reading site-content.json, using default:", err);
-    return getDefaultContent();
+    return def;
   }
 }
 
-export function saveSiteContent(content: any) {
+export function saveSiteContent(newUpdates: any) {
   ensureDir();
+  const current = getSiteContent();
   const updated = {
-    ...content,
+    ...current,
+    ...newUpdates,
     lastUpdated: new Date().toISOString(),
   };
   fs.writeFileSync(CONTENT_FILE, JSON.stringify(updated, null, 2), "utf-8");
   return updated;
+}
+
+export function resetSiteContent() {
+  ensureDir();
+  const def = getDefaultContent();
+  fs.writeFileSync(CONTENT_FILE, JSON.stringify(def, null, 2), "utf-8");
+  return def;
 }
 
 export function getSubmissions() {
@@ -73,7 +87,11 @@ export function getSubmissions() {
   }
   try {
     const raw = fs.readFileSync(SUBMISSIONS_FILE, "utf-8");
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    return {
+      contactMessages: Array.isArray(parsed.contactMessages) ? parsed.contactMessages : [],
+      registrations: Array.isArray(parsed.registrations) ? parsed.registrations : [],
+    };
   } catch {
     return { contactMessages: [], registrations: [] };
   }
@@ -83,29 +101,6 @@ export function saveSubmissions(submissions: any) {
   ensureDir();
   fs.writeFileSync(SUBMISSIONS_FILE, JSON.stringify(submissions, null, 2), "utf-8");
   return submissions;
-}
-
-export function deleteSubmission(type: "registrations" | "contactMessages", id: number) {
-  const current = getSubmissions();
-  if (current[type]) {
-    current[type] = current[type].filter((item: any) => item.id !== id);
-    saveSubmissions(current);
-    return true;
-  }
-  return false;
-}
-
-export function updateSubmissionStatus(type: "registrations" | "contactMessages", id: number, status: string) {
-  const current = getSubmissions();
-  if (current[type]) {
-    const item = current[type].find((item: any) => item.id === id);
-    if (item) {
-      item.status = status;
-      saveSubmissions(current);
-      return item;
-    }
-  }
-  return null;
 }
 
 export function recordRegistration(data: {
@@ -148,4 +143,27 @@ export function recordContactMessage(data: {
   current.contactMessages = [newRecord, ...(current.contactMessages || [])];
   saveSubmissions(current);
   return newRecord;
+}
+
+export function deleteSubmission(type: "registrations" | "contactMessages", id: number) {
+  const current = getSubmissions();
+  if (current[type]) {
+    current[type] = current[type].filter((item: any) => item.id !== id);
+    saveSubmissions(current);
+    return true;
+  }
+  return false;
+}
+
+export function updateSubmissionStatus(type: "registrations" | "contactMessages", id: number, status: string) {
+  const current = getSubmissions();
+  if (current[type]) {
+    const item = current[type].find((s: any) => s.id === id);
+    if (item) {
+      item.status = status;
+      saveSubmissions(current);
+      return item;
+    }
+  }
+  return null;
 }
