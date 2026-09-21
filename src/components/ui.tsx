@@ -406,9 +406,9 @@ export function InteractiveFloatingWidget() {
   };
 
   return (
-    <aside aria-label="Quick Registration and Support" className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <aside aria-label="Quick Registration and Support" className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end max-w-[calc(100vw-2rem)]">
       {isOpen && (
-        <div className="mb-3 w-80 rounded-3xl border border-white/20 bg-[#0B132B]/95 p-5 text-white shadow-2xl backdrop-blur-2xl animate-float">
+        <div className="mb-3 w-[calc(100vw-2rem)] max-w-sm sm:w-80 rounded-3xl border border-white/20 bg-[#0B132B]/95 p-4 sm:p-5 text-white shadow-2xl backdrop-blur-2xl animate-float">
           <div className="flex items-center justify-between border-b border-white/10 pb-3">
             <div className="flex items-center gap-2">
               <span className="relative flex h-3 w-3">

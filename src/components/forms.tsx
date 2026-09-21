@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { z } from "zod";
 import { CheckCircle2, Loader2, Send, UserPlus } from "lucide-react";
-import { PROGRAMS } from "@/data/content";
+import { useContent } from "@/context/content-context";
 import { cx } from "@/components/ui";
 
 const contactSchema = z.object({
@@ -49,7 +49,7 @@ function SubmitButton({
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 px-8 py-4 text-base font-bold text-white shadow-lg shadow-blue-600/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-blue-700/35 disabled:cursor-not-allowed disabled:opacity-70"
+      className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 px-8 py-4 text-base font-bold text-white shadow-lg shadow-blue-600/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-blue-700/35 disabled:cursor-not-allowed disabled:opacity-70 active:scale-98"
     >
       {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : icon}
       {children}
@@ -59,7 +59,7 @@ function SubmitButton({
 
 function SuccessMessage({ title, message }: { title: string; message: string }) {
   return (
-    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-center">
+    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-center animate-fadeIn">
       <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
       <h3 className="mt-3 text-lg font-extrabold text-emerald-800">{title}</h3>
       <p className="mt-1 text-sm text-emerald-700">{message}</p>
@@ -119,7 +119,7 @@ export function ContactForm() {
     return (
       <SuccessMessage
         title="Message Sent Successfully!"
-        message="Thank you for reaching out to Prime STEM Nigeria. Our team will respond to you shortly."
+        message="Thank you for reaching out to Prime STEM Nigeria. Our team will review your inquiry and get back to you shortly."
       />
     );
   }
@@ -128,27 +128,26 @@ export function ContactForm() {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label className={labelClasses} htmlFor="cf-name">Full Name *</label>
-          <input id="cf-name" name="fullName" placeholder="e.g. Adaeze Okonkwo" className={inputClasses} />
+          <label className={labelClasses} htmlFor="ct-name">Full Name *</label>
+          <input id="ct-name" name="fullName" placeholder="e.g. Dr. Ngozi Eze" className={inputClasses} />
           <FieldError message={errors.fullName} />
         </div>
         <div>
-          <label className={labelClasses} htmlFor="cf-email">Email Address *</label>
-          <input id="cf-email" name="email" type="email" placeholder="you@example.com" className={inputClasses} />
+          <label className={labelClasses} htmlFor="ct-email">Email Address *</label>
+          <input id="ct-email" name="email" type="email" placeholder="you@example.com" className={inputClasses} />
           <FieldError message={errors.email} />
         </div>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label className={labelClasses} htmlFor="cf-phone">Phone Number</label>
-          <input id="cf-phone" name="phone" placeholder="+234 800 000 0000" className={inputClasses} />
-          <FieldError message={errors.phone} />
+          <label className={labelClasses} htmlFor="ct-phone">Phone Number</label>
+          <input id="ct-phone" name="phone" placeholder="+234 800 000 0000" className={inputClasses} />
         </div>
         <div>
-          <label className={labelClasses} htmlFor="cf-category">I Am A *</label>
-          <select id="cf-category" name="category" className={inputClasses} defaultValue="">
+          <label className={labelClasses} htmlFor="ct-category">I Am A *</label>
+          <select id="ct-category" name="category" className={inputClasses} defaultValue="">
             <option value="" disabled>Select one…</option>
-            {["Student", "Parent/Guardian", "School", "Teacher", "Organization", "Partner", "Other"].map((opt) => (
+            {["Student", "Parent/Guardian", "Teacher", "School Administrator", "Partner/Sponsor", "Other"].map((opt) => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
           </select>
@@ -156,22 +155,28 @@ export function ContactForm() {
         </div>
       </div>
       <div>
-        <label className={labelClasses} htmlFor="cf-subject">Subject *</label>
-        <input id="cf-subject" name="subject" placeholder="How can we help you?" className={inputClasses} />
+        <label className={labelClasses} htmlFor="ct-subject">Subject *</label>
+        <input id="ct-subject" name="subject" placeholder="e.g. Inquiry about 5th STEM Kids Championship" className={inputClasses} />
         <FieldError message={errors.subject} />
       </div>
       <div>
-        <label className={labelClasses} htmlFor="cf-message">Message *</label>
+        <label className={labelClasses} htmlFor="ct-message">Your Message *</label>
         <textarea
-          id="cf-message"
+          id="ct-message"
           name="message"
           rows={5}
-          placeholder="Tell us about your enquiry…"
-          className={inputClasses}
+          placeholder="Tell us how we can help you…"
+          className={cx(inputClasses, "resize-y")}
         />
         <FieldError message={errors.message} />
       </div>
-      {serverError && <p className="text-sm font-semibold text-red-500">{serverError}</p>}
+
+      {serverError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-600">
+          {serverError}
+        </div>
+      )}
+
       <SubmitButton pending={pending} icon={<Send className="h-5 w-5" />}>
         {pending ? "Sending…" : "Send Message"}
       </SubmitButton>
@@ -183,6 +188,8 @@ export function ContactForm() {
 // REGISTER FORM
 // -------------------------------------------------------------
 export function RegisterForm() {
+  const { content } = useContent();
+  const programs = content.programs;
   const [errors, setErrors] = useState<FieldErrors>({});
   const [pending, setPending] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -231,7 +238,7 @@ export function RegisterForm() {
     return (
       <SuccessMessage
         title="Registration Received!"
-        message="Thank you for registering with Prime STEM Nigeria. We will contact you with the next steps and programme details."
+        message="Thank you for registering with Prime STEM Nigeria. Our examination coordinator will contact you with candidate confirmation and syllabus details."
       />
     );
   }
@@ -271,34 +278,33 @@ export function RegisterForm() {
         <label className={labelClasses} htmlFor="rg-program">Programme *</label>
         <select id="rg-program" name="program" className={inputClasses} defaultValue="">
           <option value="" disabled>Select a programme…</option>
-          {PROGRAMS.map((p) => (
-            <option key={p.slug} value={p.name}>{p.name}</option>
+          {programs.map((p) => (
+            <option key={p.slug} value={p.name}>{p.name} ({p.shortName})</option>
           ))}
-          <option value="Other STEM Event">Other STEM Event</option>
+          <option value="Other STEM Event">Other STEM Event / Tour</option>
         </select>
         <FieldError message={errors.program} />
       </div>
       <div>
-        <label className={labelClasses} htmlFor="rg-message">Additional Message (optional)</label>
+        <label className={labelClasses} htmlFor="rg-message">Additional Notes or Candidate List</label>
         <textarea
           id="rg-message"
           name="message"
           rows={4}
-          placeholder="Anything we should know? e.g. school name, class, city…"
-          className={inputClasses}
+          placeholder="Number of candidates, school name, preferred examination format (Physical/Online)…"
+          className={cx(inputClasses, "resize-y")}
         />
-        <FieldError message={errors.message} />
       </div>
-      {serverError && <p className="text-sm font-semibold text-red-500">{serverError}</p>}
+
+      {serverError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-600">
+          {serverError}
+        </div>
+      )}
+
       <SubmitButton pending={pending} icon={<UserPlus className="h-5 w-5" />}>
-        {pending ? "Submitting…" : "Complete Registration"}
+        {pending ? "Submitting Registration…" : "Complete Registration"}
       </SubmitButton>
-      <p className="text-center text-xs text-slate-400">
-        By registering you agree to be contacted by Prime STEM Nigeria about this programme.
-      </p>
     </form>
   );
 }
-
-// Export helpers for styling reuse
-export { cx, inputClasses, labelClasses };
