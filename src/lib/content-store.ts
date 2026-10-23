@@ -1,15 +1,59 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 import * as defaultData from "@/data/content";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const CONTENT_FILE = path.join(DATA_DIR, "site-content.json");
-const SUBMISSIONS_FILE = path.join(DATA_DIR, "submissions.json");
+// The repository ships seed JSON in ./data. On Vercel (and most serverless hosts)
+// the deployment filesystem is read-only, so runtime writes go to a temp directory
+// instead. Both locations are read on startup, newest-wins.
+const SEED_DIR = path.join(process.cwd(), "data");
+const IS_SERVERLESS = Boolean(process.env.VERCEL);
+const RUNTIME_DIR = IS_SERVERLESS
+  ? path.join(os.tmpdir(), "prime-stem-data")
+  : SEED_DIR;
+
+const CONTENT_FILENAME = "site-content.json";
+const SUBMISSIONS_FILENAME = "submissions.json";
+
+function readDirs(): string[] {
+  return RUNTIME_DIR === SEED_DIR ? [SEED_DIR] : [RUNTIME_DIR, SEED_DIR];
+}
 
 function ensureDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    if (!fs.existsSync(RUNTIME_DIR)) {
+      fs.mkdirSync(RUNTIME_DIR, { recursive: true });
+    }
+  } catch (err) {
+    console.warn("[content-store] Could not create data directory:", err);
   }
+}
+
+function readJson(filename: string): any | null {
+  for (const dir of readDirs()) {
+    try {
+      const file = path.join(dir, filename);
+      if (!fs.existsSync(file)) continue;
+      return JSON.parse(fs.readFileSync(file, "utf-8"));
+    } catch (err) {
+      console.warn(`[content-store] Could not read ${filename} from ${dir}:`, err);
+    }
+  }
+  return null;
+}
+
+function writeJson(filename: string, value: unknown): boolean {
+  ensureDir();
+  for (const dir of readDirs()) {
+    try {
+      fs.writeFileSync(path.join(dir, filename), JSON.stringify(value, null, 2), "utf-8");
+      return true;
+    } catch (err) {
+      // Read-only filesystem (e.g. a deployment without a database) — try the next location.
+      console.warn(`[content-store] Could not write ${filename} to ${dir}:`, err);
+    }
+  }
+  return false;
 }
 
 export function getDefaultContent() {
@@ -38,68 +82,52 @@ export function getDefaultContent() {
 }
 
 export function getSiteContent() {
-  ensureDir();
   const def = getDefaultContent();
+  const parsed = readJson(CONTENT_FILENAME);
 
-  if (!fs.existsSync(CONTENT_FILE)) {
-    fs.writeFileSync(CONTENT_FILE, JSON.stringify(def, null, 2), "utf-8");
+  if (!parsed) {
+    writeJson(CONTENT_FILENAME, def);
     return def;
   }
 
-  try {
-    const raw = fs.readFileSync(CONTENT_FILE, "utf-8");
-    const parsed = JSON.parse(raw);
-    return {
-      ...def,
-      ...parsed,
-    };
-  } catch (err) {
-    console.error("Error reading site-content.json, using default:", err);
-    return def;
-  }
+  return {
+    ...def,
+    ...parsed,
+  };
 }
 
 export function saveSiteContent(newUpdates: any) {
-  ensureDir();
   const current = getSiteContent();
   const updated = {
     ...current,
     ...newUpdates,
     lastUpdated: new Date().toISOString(),
   };
-  fs.writeFileSync(CONTENT_FILE, JSON.stringify(updated, null, 2), "utf-8");
+  writeJson(CONTENT_FILENAME, updated);
   return updated;
 }
 
 export function resetSiteContent() {
-  ensureDir();
   const def = getDefaultContent();
-  fs.writeFileSync(CONTENT_FILE, JSON.stringify(def, null, 2), "utf-8");
+  writeJson(CONTENT_FILENAME, def);
   return def;
 }
 
 export function getSubmissions() {
-  ensureDir();
-  if (!fs.existsSync(SUBMISSIONS_FILE)) {
+  const parsed = readJson(SUBMISSIONS_FILENAME);
+  if (!parsed) {
     const initial = { contactMessages: [], registrations: [] };
-    fs.writeFileSync(SUBMISSIONS_FILE, JSON.stringify(initial, null, 2), "utf-8");
+    writeJson(SUBMISSIONS_FILENAME, initial);
     return initial;
   }
-  try {
-    const raw = fs.readFileSync(SUBMISSIONS_FILE, "utf-8");
-    const parsed = JSON.parse(raw);
-    return {
-      contactMessages: Array.isArray(parsed.contactMessages) ? parsed.contactMessages : [],
-      registrations: Array.isArray(parsed.registrations) ? parsed.registrations : [],
-    };
-  } catch {
-    return { contactMessages: [], registrations: [] };
-  }
+  return {
+    contactMessages: Array.isArray(parsed.contactMessages) ? parsed.contactMessages : [],
+    registrations: Array.isArray(parsed.registrations) ? parsed.registrations : [],
+  };
 }
 
 export function saveSubmissions(submissions: any) {
-  ensureDir();
-  fs.writeFileSync(SUBMISSIONS_FILE, JSON.stringify(submissions, null, 2), "utf-8");
+  writeJson(SUBMISSIONS_FILENAME, submissions);
   return submissions;
 }
 
