@@ -59,10 +59,10 @@ function EarlyBirdBar() {
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2.5 py-0.5 font-bold uppercase tracking-wider text-amber-300 ring-1 ring-amber-400/30 animate-pulse">
-            <Sparkles className="h-3 w-3" /> Early Bird Active
+            <Sparkles className="h-3 w-3" /> Exam Tomorrow
           </span>
           <span className="font-semibold text-slate-100">
-            {offer.title} — <strong className="text-cyan-300 font-extrabold">{offer.feePerCandidate}</strong> ({offer.minCandidates})
+            {offer.title} — <strong className="text-cyan-300 font-extrabold">{offer.feePerCandidate}</strong> per candidate
           </span>
           <span className="hidden text-slate-400 sm:inline">•</span>
           <span className="hidden items-center gap-1.5 text-slate-300 md:inline-flex">
@@ -258,7 +258,7 @@ export default function Header() {
               href="/register"
               className="hidden rounded-full bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-blue-700/35 sm:inline-flex"
             >
-              Register Now ({content.earlyBirdOffer?.feePerCandidate || "₦2k"})
+              Register Now ({content.earlyBirdOffer?.feePerCandidate || "₦4k"})
             </Link>
             <button
               className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-[#172554] transition hover:bg-slate-50 xl:hidden"
@@ -324,7 +324,7 @@ export default function Header() {
                   onClick={() => setOpen(false)}
                   className="block rounded-full bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 px-6 py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-blue-600/25"
                 >
-                  Register Now ({content.earlyBirdOffer?.feePerCandidate || "₦2k"} Early Bird)
+                  Register Now ({content.earlyBirdOffer?.feePerCandidate || "₦4k"})
                 </Link>
                 <a
                   href="https://selar.com/k484f98wdl"

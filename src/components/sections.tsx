@@ -104,7 +104,7 @@ export function StatsSection() {
 }
 
 // -------------------------------------------------------------
-// EARLY BIRD & BANK DETAILS BANNER
+// EXAM ANNOUNCEMENT & BANK DETAILS BANNER
 // -------------------------------------------------------------
 export function EarlyBirdSpotlightSection() {
   const { content } = useContent();
@@ -133,7 +133,7 @@ export function EarlyBirdSpotlightSection() {
                 {offer.title}
               </h2>
               <p className="mt-4 text-base leading-relaxed text-slate-200">
-                Schools registering {offer.minCandidates || "10 candidates or more"} can take advantage of our special Early Bird registration fee of just <strong className="text-amber-300 font-extrabold text-lg">{offer.feePerCandidate || "₦2,000"} per candidate</strong>. Open to pupils in Basic 3–6 and Junior Secondary JSS 1–3.
+                The 5th Edition exams begin tomorrow, Saturday, November 14, 2026. The physical exam holds on November 14 only; online candidates can sit the exam from November 14 to November 28, 2026. Fee: <strong className="text-amber-300 font-extrabold text-lg">{offer.feePerCandidate || "₦4,000"} per candidate</strong>. Open to pupils in Basic 3–6 and Junior Secondary JSS 1–3.
               </p>
 
               <div className="mt-6 flex flex-wrap gap-4">
@@ -529,11 +529,11 @@ export function FinalCTA() {
             Ignite Your Students&apos; Potential with Prime STEM Nigeria
           </h2>
           <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg leading-relaxed text-slate-300">
-            Whether you are registering students for the 5th Edition STEM Kids Championship at the ₦2,000 Early Bird rate, bringing laptops to your school, or partnering with us — there is a place for you at Prime STEM Nigeria.
+            Whether you are registering students for the 5th Edition STEM Kids Championship for the 5th Edition exam (fee ₦4,000), bringing laptops to your school, or partnering with us — there is a place for you at Prime STEM Nigeria.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <ButtonLink href="/register" variant="gradient" size="lg">
-              Register for Competition (₦2k Early Bird) <ArrowRight className="h-4 w-4" />
+              Register for the Exam (₦4k) <ArrowRight className="h-4 w-4" />
             </ButtonLink>
             <ButtonLink href="/contact" variant="white" size="lg">
               <Handshake className="h-5 w-5" /> Partner or Sponsor

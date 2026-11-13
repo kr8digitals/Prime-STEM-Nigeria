@@ -70,21 +70,21 @@ export default async function ProgramDetailPage({
         image={program.image}
       />
 
-      {/* Special Early Bird Banner for SKC */}
+      {/* Exam announcement banner for SKC */}
       {isSKC && (
         <section className="bg-gradient-to-r from-[#0B132B] via-[#1E3A8A] to-[#4C1D95] text-white py-6 border-b border-cyan-400/30">
           <Container>
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400 text-slate-950 font-black">
-                  ₦2k
+                  ₦4k
                 </span>
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                    5th Edition Early Bird Discount Active
+                    5th Edition — Exams Begin Tomorrow (Nov 14)
                   </p>
                   <p className="text-sm font-semibold text-slate-100">
-                    Schools registering 10+ candidates pay only <strong>₦2,000 per candidate</strong>!
+                    Physical exam holds <strong>Nov 14 only</strong> · Online exam runs <strong>Nov 14–28</strong> · Fee: <strong>₦4,000</strong> per candidate.
                   </p>
                 </div>
               </div>

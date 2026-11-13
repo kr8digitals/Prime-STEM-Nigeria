@@ -434,7 +434,7 @@ export function InteractiveFloatingWidget() {
                 <Sparkles className="h-3.5 w-3.5 text-amber-400" /> 5th STEM Kids Championship
               </p>
               <p className="text-[0.75rem] text-slate-300 mt-1 leading-snug">
-                Early Bird rate is active: <strong className="text-white">₦2,000 / candidate</strong> for 10+ students.
+                Exams begin tomorrow: <strong className="text-white">Physical Nov 14 only · Online Nov 14–28</strong> · fee ₦4,000 / candidate.
               </p>
               <div className="mt-2.5 flex items-center justify-between rounded-xl bg-black/40 px-2.5 py-1.5 text-xs font-mono">
                 <span className="text-cyan-300">UBA: 1025357212</span>
@@ -477,7 +477,7 @@ export function InteractiveFloatingWidget() {
           <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-300"></span>
         </span>
         <span className="text-xs font-extrabold pr-1 hidden sm:inline">
-          {isOpen ? "Close Help" : "₦2k Early Bird / WhatsApp"}
+          {isOpen ? "Close Help" : "Exam Tomorrow / WhatsApp"}
         </span>
         <Sparkles className="h-4 w-4 text-amber-300 group-hover:rotate-12 transition-transform" />
       </button>

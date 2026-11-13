@@ -67,17 +67,17 @@ export const IMAGES = {
 };
 
 // -------------------------------------------------------------
-// EARLY BIRD ANNOUNCEMENT & BANK PAYMENT DETAILS
+// EXAM ANNOUNCEMENT & BANK PAYMENT DETAILS
 // -------------------------------------------------------------
 export const EARLY_BIRD_OFFER = {
   active: true,
-  title: "5th Edition STEM Kids Championship — Registration Now Open!",
-  headline: "Take Advantage of ₦2,000 Early Bird Registration Fee",
+  title: "5th Edition STEM Kids Championship — Exams Begin Tomorrow!",
+  headline: "Exams Begin Tomorrow — Physical (Nov 14 Only) · Online (Nov 14–28)",
   description:
-    "Schools registering 10 candidates or more can take advantage of our special Early Bird registration fee of just ₦2,000 per candidate. Secure your school's slot early before regular rates apply.",
-  feePerCandidate: "₦2,000",
+    "The 5th Edition STEM Kids Championship exams begin tomorrow, Saturday, November 14, 2026. The physical exam holds on November 14 only; online candidates can sit the exam from November 14 to November 28, 2026. Registration fee: ₦4,000 per candidate.",
+  feePerCandidate: "₦4,000",
   minCandidates: "10 candidates or more",
-  deadlineNote: "Limited time early bird window for accredited primary and junior secondary schools.",
+  deadlineNote: "Physical candidates must sit the exam tomorrow, Saturday, November 14, 2026. Online candidates can sit the exam from November 14 to November 28, 2026.",
   bankDetails: {
     accountName: "PRIME STEM NIGERIA",
     accountNumber: "1025357212",
@@ -278,7 +278,7 @@ export const PROGRAMS: Program[] = [
     image: IMAGES.hero,
     tagline: "Igniting Passion for STEM in Young Learners (Basic 3–6 & JSS 1–3)",
     description:
-      "This prestigious international competition engages pupils in Basic 3–6 and Junior Secondary School (JSS 1–3) across Mathematics, Basic Science, and Computer Technology. Now open for the 5th Edition with Early Bird discount!",
+      "This prestigious international competition engages pupils in Basic 3–6 and Junior Secondary School (JSS 1–3) across Mathematics, Basic Science, and Computer Technology. The 5th Edition exam begins Saturday, November 14, 2026 — physical candidates sit the exam on November 14 only; online candidates can sit it any day from November 14 to November 28, 2026.",
     overview:
       "The STEM Kids Championship (SKC) is designed to inspire creativity, scientific inquiry, and critical problem-solving from an early age. Thousands of candidates from hundreds of schools across Nigeria and Africa compete in foundational STEM disciplines, culminating in high-profile national recognition and scholarships.",
     targetAudience: "Basic 3–6 & Junior Secondary School 1–3",
@@ -295,16 +295,16 @@ export const PROGRAMS: Program[] = [
       "Private and public schools committed to 21st-century STEM excellence.",
     ],
     features: [
-      { title: "Early Bird ₦2,000 Offer", description: "Special discount for schools registering 10+ students.", icon: "sparkles" },
+      { title: "₦4,000 Registration Fee", description: "Registration fee per candidate for the 5th Edition exam.", icon: "sparkles" },
       { title: "Master Preparatory Guide", description: "4 years of past questions & answers (2022–2025) via Selar.", icon: "book" },
       { title: "Multi-State Tour Recognition", description: "Winners celebrated during the nationwide Award Tour.", icon: "trophy" },
     ],
-    date: "November 14, 2026 (Exam) | Tour: Oct 19–30",
-    format: "Physical & School-Based",
+    date: "November 14, 2026 (Physical Exam — one day) | Online: Nov 14–28, 2026 | Tour: Oct 19–30",
+    format: "Physical (Nov 14 only) & Online (Nov 14–28)",
     location: "All States in Nigeria + Selected African Cities",
     category: "Competition",
     featured: true,
-    status: "Registration Open — ₦2k Early Bird",
+    status: "Exam Begins Nov 14 — ₦4,000 Fee",
     actionUrl: "/register?program=skc",
   },
   {
@@ -1035,9 +1035,9 @@ export type NewsArticle = {
 export const NEWS: NewsArticle[] = [
   {
     slug: "stem-kids-championship-5th-edition-early-bird",
-    title: "5th Edition STEM Kids Championship Registration Just Started — ₦2,000 Early Bird Discount",
+    title: "5th Edition STEM Kids Championship — Registration Fee ₦4,000",
     excerpt:
-      "Schools registering 10 candidates or more can now secure the special ₦2,000 early bird registration fee for the 5th Edition of Africa's premier STEM Kids Championship.",
+      "Registration for the 5th Edition of Africa's premier STEM Kids Championship closes at a fee of ₦4,000 per candidate. The exams begin on Saturday, November 14, 2026.",
     category: "Championship Announcement",
     date: "September 2026",
     image: IMAGES.hero,
@@ -1045,9 +1045,28 @@ export const NEWS: NewsArticle[] = [
     content: [
       "We are excited to announce the official commencement of registration for the 5th Edition of the STEM Kids Championship!",
       "This edition promises to be bigger, more competitive, and more rewarding for participating schools, teachers, and candidates.",
-      "Schools registering 10 candidates or more can take advantage of our special Early Bird registration fee of just ₦2,000 per candidate. This offer is available for only a limited time, so schools are strongly encouraged to register early and secure this special rate.",
+      "The registration fee for the 5th Edition is ₦4,000 per candidate.",
+      "The exams begin on Saturday, November 14, 2026. The physical exam holds on November 14 only; online candidates can sit the exam from November 14 to November 28, 2026.",
       "Official Payment Details: Account Name: PRIME STEM NIGERIA | Account Number: 1025357212 | Bank: UNITED BANK FOR AFRICA (UBA).",
       "To help candidates prepare effectively, we have released the STEM Kids Championship Master Preparatory Guide on Selar (selar.com/k484f98wdl), featuring 4 years of past questions and answers (2022–2025), proven winning strategies, and recommended topics.",
+    ],
+  },
+  {
+    slug: "stem-kids-championship-exam-begins-november-14",
+    title: "STEM Kids Championship Exam Begins Tomorrow — Physical (Nov 14 Only) · Online (Nov 14–28)",
+    excerpt:
+      "The 5th Edition STEM Kids Championship exams begin tomorrow, Saturday, November 14, 2026. The physical exam holds on November 14 only; online candidates can sit the exam from November 14 to November 28, 2026.",
+    category: "Championship Announcement",
+    date: "November 13, 2026",
+    image: IMAGES.hero,
+    featured: true,
+    content: [
+      "The 5th Edition STEM Kids Championship exams begin tomorrow, Saturday, November 14, 2026.",
+      "PHYSICAL EXAM: The physical exam holds on Saturday, November 14, 2026 ONLY. Candidates sitting the physical exam must be present at their centre tomorrow — there will be no physical resit before the online window closes.",
+      "ONLINE EXAM: Online candidates can sit the exam from Saturday, November 14 to Saturday, November 28, 2026. The exam is available any day within this two-week window.",
+      "Candidates sit Mathematics, Basic Science, and Computer Technology across two categories: Basic 3–6 and JSS 1–3. The official cut-off mark is 50%.",
+      "The registration fee is ₦4,000 per candidate. Successful registrants will receive their exam instructions through their registered school or the contact provided at registration.",
+      "Prepare to compete. Prepare to win. Good luck to every candidate!",
     ],
   },
   {
