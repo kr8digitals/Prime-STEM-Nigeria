@@ -23,7 +23,7 @@ This web application provides a public platform featuring flagship competitions,
 ### 1. Public Platform
 * **25+ Static & Dynamic Pages:** Comprehensive coverage of programs, services, news, events, partners, gallery, and school engagement.
 * **Flagship Programs:**
-  * **STEM Kids Championship (SKC):** 5th Edition national championship with active **₦2,000 Early Bird** registration fee.
+  * **STEM Kids Championship (SKC):** 5th Edition national championship with an active **₦4,000** registration fee — exam begins **Nov 14, 2026** (physical: Nov 14 only; online: Nov 14–28).
   * **African Organic Chemistry Tournament (AOCT):** Continental chemistry Olympiad.
   * **Annual National Science Championship (ANSC):** Secondary school STEM tournament.
   * **SCI-SPELL:** Science vocabulary and literacy competition.
@@ -47,7 +47,7 @@ Accessible only with master password authentication:
   1. 📊 **Command Center:** Real-time analytics for registrations, messages, winners, and active programs.
   2. 👥 **Registrations CRM:** Full candidate and school registration database with search, filter, status toggles, and **one-click CSV export**.
   3. 💬 **Contact Inquiries:** Inbox for inquiries submitted via `/contact` with direct `mailto:` reply triggers.
-  4. ✨ **Early Bird & Announcements:** Toggle alert ribbons, modify registration fees, and update payment account directives.
+  4. ✨ **Exam Banner & Announcements:** Toggle alert ribbons, modify registration fees, and update payment account directives.
   5. 🏆 **Winners & Hall of Fame:** Add, edit, or delete student champions, schools, and prize amounts.
   6. 🏅 **Programs & Competitions:** Modify titles, syllabi, cash prizes, dates, locations, and formats.
   7. 🤝 **Partners & Accredited Schools:** Manage strategic partners (NJFP / UNDP, AFRISTEM, SYLCOUTECH, Linguafront) and accredited school tags.

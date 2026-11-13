@@ -45,13 +45,13 @@ function Hero() {
 
   const floatingBadges = [
     { text: offer?.title || "5th Edition SKC Open", icon: Trophy, color: "border-amber-400/40 text-amber-300 bg-amber-500/10" },
-    { text: `${offer?.feePerCandidate || "₦2,000"} Early Bird Rate`, icon: Sparkles, color: "border-cyan-400/40 text-cyan-300 bg-cyan-500/10" },
+    { text: `${offer?.feePerCandidate || "₦4,000"} Registration Fee`, icon: Sparkles, color: "border-cyan-400/40 text-cyan-300 bg-cyan-500/10" },
     { text: "Over ₦2.7M Awarded", icon: Award, color: "border-emerald-400/40 text-emerald-300 bg-emerald-500/10" },
     { text: "36 States + FCT Tour", icon: Rocket, color: "border-purple-400/40 text-purple-300 bg-purple-500/10" },
   ];
 
   const marqueeItems = [
-    "🏅 5th Edition STEM Kids Championship Open (₦2,000 Early Bird)",
+    "📢 SKC Exams Begin Tomorrow (Sat Nov 14) — Physical: Nov 14 Only · Online: Nov 14–28",
     "🏆 Over ₦2,700,000 in Cash Prizes & Awards Distributed",
     "🤝 Partnered with UNDP / NJFP & AFRISTEM Africa STEM Education Network",
     "🏫 NTIC Abuja • Bright Sun College Lagos • Preston Int'l Akure • Mayfair Academy",
@@ -115,7 +115,7 @@ function Hero() {
               {/* Call to action buttons */}
               <div className="mt-9 flex flex-col gap-4 sm:flex-row">
                 <ButtonLink href="/register" variant="gradient" size="lg">
-                  Register Candidate ({offer?.feePerCandidate || "₦2k"} Early Bird) <ArrowRight className="h-5 w-5" />
+                  Register Candidate ({offer?.feePerCandidate || "₦4k"}) <ArrowRight className="h-5 w-5" />
                 </ButtonLink>
                 <ButtonLink href="/programs" variant="white" size="lg">
                   Explore Programs
@@ -167,8 +167,8 @@ function Hero() {
                     <p className="text-[0.65rem] text-slate-300 uppercase font-bold">Top Prize</p>
                   </div>
                   <div className="rounded-xl bg-white/10 p-2.5">
-                    <p className="text-base font-black text-amber-300">{offer?.feePerCandidate || "₦2,000"}</p>
-                    <p className="text-[0.65rem] text-slate-300 uppercase font-bold">Early Bird</p>
+                    <p className="text-base font-black text-amber-300">{offer?.feePerCandidate || "₦4,000"}</p>
+                    <p className="text-[0.65rem] text-slate-300 uppercase font-bold">Reg. Fee</p>
                   </div>
                   <div className="rounded-xl bg-white/10 p-2.5">
                     <p className="text-base font-black text-emerald-300">36 + FCT</p>

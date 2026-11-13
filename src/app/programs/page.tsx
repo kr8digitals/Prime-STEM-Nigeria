@@ -87,7 +87,7 @@ export default function ProgramsPage() {
 
                     <div className="mt-8 flex flex-wrap gap-4">
                       <ButtonLink href="/register" variant="primary">
-                        Register Now ({content.earlyBirdOffer?.feePerCandidate || "₦2k"}) <ArrowRight className="h-4 w-4" />
+                        Register Now ({content.earlyBirdOffer?.feePerCandidate || "₦4k"}) <ArrowRight className="h-4 w-4" />
                       </ButtonLink>
                       <ButtonLink href={`/programs/${program.slug}`} variant="outline">
                         View Full Details

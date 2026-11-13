@@ -77,24 +77,24 @@ export default function RegisterPage() {
         image={IMAGES.hero}
       />
 
-      {/* Early Bird Callout Banner */}
+      {/* Exam announcement callout banner */}
       {offer?.active && (
         <section className="bg-gradient-to-r from-[#0B132B] via-[#1E3A8A] to-[#4C1D95] text-white py-8 border-b border-cyan-400/30">
           <Container>
             <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-4">
                 <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-amber-400 text-slate-950 font-black text-xl shadow-lg">
-                  {offer.feePerCandidate || "₦2k"}
+                  {offer.feePerCandidate || "₦4k"}
                 </span>
                 <div>
                   <span className="inline-block rounded-full bg-amber-400/20 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-amber-300 ring-1 ring-amber-400/30 mb-1">
-                    Limited Early Bird Offer Active
+                    Exams Begin Tomorrow — Physical Nov 14 Only
                   </span>
                   <h3 className="text-xl font-black text-white">
                     {offer.title}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-200">
-                    Schools registering {offer.minCandidates} enjoy <strong>{offer.feePerCandidate} per candidate</strong> early bird discount.
+                    Physical exam holds <strong>November 14 only</strong> · online exam runs <strong>November 14–28, 2026</strong> · fee: <strong>{offer.feePerCandidate} per candidate</strong>.
                   </p>
                 </div>
               </div>
@@ -176,7 +176,7 @@ export default function RegisterPage() {
 
                 <div className="mt-5 rounded-xl bg-white/5 p-3 text-[0.75rem] text-slate-300 border border-white/10">
                   <p className="font-bold text-white mb-1">Payment Instructions:</p>
-                  <p>1. Pay early bird fee ({offer?.feePerCandidate || "₦2,000"}/candidate for {offer?.minCandidates || "10+ students"}).</p>
+                  <p>1. Pay the exam fee ({offer?.feePerCandidate || "₦4,000"}/candidate).</p>
                   <p>2. Send proof of transfer and list of candidates to:</p>
                   <p className="text-cyan-300 mt-1 font-mono">{org?.email || "primestemnigeria@gmail.com"}</p>
                   <p className="text-slate-300">or WhatsApp: <strong className="text-white">{org?.phone || "+234 813 825 8491"}</strong></p>

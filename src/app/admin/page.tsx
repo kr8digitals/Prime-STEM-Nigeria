@@ -407,7 +407,7 @@ export default function AdminPage() {
             { id: "overview", label: "Command Center", icon: Layers },
             { id: "registrations", label: `Registrations (${registrations.length})`, icon: Users },
             { id: "messages", label: `Inquiries (${messages.length})`, icon: MessageSquare },
-            { id: "announcements", label: "Early Bird & Banner", icon: Sparkles },
+            { id: "announcements", label: "Exam Banner & Fee", icon: Sparkles },
             { id: "winners", label: `Winners (${content.winners.length})`, icon: Trophy },
             { id: "programs", label: `Programs (${content.programs.length})`, icon: Award },
             { id: "partners", label: `Partners (${content.partners.length})`, icon: Handshake },
@@ -510,7 +510,7 @@ export default function AdminPage() {
                   className="rounded-2xl border border-white/10 bg-white/5 p-4 text-left hover:border-amber-400/50 hover:bg-white/10 transition"
                 >
                   <Sparkles className="h-5 w-5 text-amber-400 mb-2" />
-                  <p className="text-sm font-bold text-white">Edit ₦2,000 Early Bird</p>
+                  <p className="text-sm font-bold text-white">Edit ₦4,000 Exam Banner</p>
                   <p className="text-xs text-slate-400 mt-1">Modify fees &amp; UBA bank details</p>
                 </button>
 
@@ -775,21 +775,21 @@ export default function AdminPage() {
         )}
 
         {/* =========================================================
-            TAB 4: ANNOUNCEMENTS & EARLY BIRD MANAGER
+            TAB 4: ANNOUNCEMENTS & FEE MANAGER
         ========================================================= */}
         {activeTab === "announcements" && (
           <div className="space-y-6 animate-fadeIn">
             <div>
-              <h2 className="text-2xl font-black text-white">Announcement &amp; Early Bird Control</h2>
+              <h2 className="text-2xl font-black text-white">Announcement &amp; Fee Control</h2>
               <p className="text-xs text-slate-400">
-                Configure the top alert ribbon, registration fee discount, and bank details shown across the site.
+                Configure the top alert ribbon, registration fee, and bank details shown across the site.
               </p>
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-[#0B132B] p-6 sm:p-8 space-y-6 shadow-xl">
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
                 <div>
-                  <h3 className="text-base font-bold text-white">Early Bird Banner Visibility</h3>
+                  <h3 className="text-base font-bold text-white">Exam Banner Visibility</h3>
                   <p className="text-xs text-slate-400">Enable or disable the top announcement bar on all pages.</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
