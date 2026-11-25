@@ -67,7 +67,7 @@ function Hero() {
       <div className="absolute inset-0">
         <img
           src={IMAGES.hero}
-          alt="2025 Nigerian STEM Championship Winners with ceremonial cheques on stage"
+          alt="2025 Annual National Science Championship Winners with ceremonial cheques on stage"
           className="h-full w-full object-cover opacity-35 object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-tr from-[#0B132B] via-[#0B132B]/85 to-[#172554]/75" />
@@ -141,7 +141,7 @@ function Hero() {
                 <div className="relative h-64 sm:h-72 overflow-hidden rounded-2xl bg-slate-900">
                   <img
                     src="/images/awards/championship-2025-winners-stage.jpg"
-                    alt="2025 Nigerian STEM Championship Winners on Stage"
+                    alt="2025 Annual National Science Championship Winners on Stage"
                     className="h-full w-full object-cover transition duration-500 hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0B132B]/90 via-transparent to-transparent" />
@@ -151,7 +151,7 @@ function Hero() {
                         Over ₦2.7M Awarded
                       </span>
                       <p className="mt-1 text-xs font-extrabold text-white">
-                        2025 Nigerian STEM Championship Winners
+                        2025 Annual National Science Championship Winners
                       </p>
                     </div>
                     <span className="rounded-lg bg-emerald-500/90 px-2 py-1 text-[0.65rem] font-bold text-white flex items-center gap-1">

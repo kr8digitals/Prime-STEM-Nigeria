@@ -2,17 +2,9 @@
 
 import {
   ArrowRight,
-  BookOpen,
-  Calendar,
   ChevronDown,
-  Copy,
-  Check,
-  Mail,
   Menu,
-  Phone,
-  Sparkles,
   X,
-  Lock,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -40,81 +32,12 @@ function Logo() {
   );
 }
 
-function EarlyBirdBar() {
-  const { content } = useContent();
-  const [copied, setCopied] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
-
-  const offer = content.earlyBirdOffer;
-  if (dismissed || !offer?.active) return null;
-
-  const handleCopyAccount = () => {
-    navigator.clipboard.writeText(offer.bankDetails?.accountNumber || "1025357212");
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
-
-  return (
-    <div className="relative border-b border-cyan-400/30 bg-gradient-to-r from-[#0B132B] via-[#1E3A8A] to-[#4C1D95] px-4 py-2 text-white">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2.5 py-0.5 font-bold uppercase tracking-wider text-amber-300 ring-1 ring-amber-400/30 animate-pulse">
-            <Sparkles className="h-3 w-3" /> Exam Tomorrow
-          </span>
-          <span className="font-semibold text-slate-100">
-            {offer.title} — <strong className="text-cyan-300 font-extrabold">{offer.feePerCandidate}</strong> per candidate
-          </span>
-          <span className="hidden text-slate-400 sm:inline">•</span>
-          <span className="hidden items-center gap-1.5 text-slate-300 md:inline-flex">
-            Pay to {offer.bankDetails?.bank || "UBA"}: <strong className="font-mono text-white">{offer.bankDetails?.accountNumber || "1025357212"}</strong>
-            <button
-              onClick={handleCopyAccount}
-              className="ml-1 inline-flex items-center gap-1 rounded bg-white/10 px-1.5 py-0.5 text-[0.7rem] font-semibold text-cyan-200 transition hover:bg-white/20 active:scale-95"
-              title="Copy Bank Account Number"
-            >
-              {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-              {copied ? "Copied" : "Copy"}
-            </button>
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Link
-            href="/register"
-            className="inline-flex items-center gap-1 font-bold text-cyan-300 transition hover:text-white"
-          >
-            Register Now <ArrowRight className="h-3 w-3" />
-          </Link>
-          {offer.masterGuide?.url && (
-            <a
-              href={offer.masterGuide.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 font-semibold text-slate-200 transition hover:bg-white/20 lg:inline-flex"
-            >
-              <BookOpen className="h-3 w-3 text-amber-300" /> Past Questions
-            </a>
-          )}
-          <button
-            onClick={() => setDismissed(true)}
-            className="rounded p-0.5 text-slate-400 transition hover:text-white"
-            aria-label="Dismiss banner"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function Header() {
   const { content } = useContent();
   const [open, setOpen] = useState(false);
   const [programsOpen, setProgramsOpen] = useState(false);
   const [mobileProgramsOpen, setMobileProgramsOpen] = useState(false);
 
-  const org = content.organization;
   const programs = content.programs;
 
   const navItems = [
@@ -131,57 +54,6 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50">
-      <EarlyBirdBar />
-
-      {/* Top bar */}
-      <div className="hidden bg-[#0B132B] text-slate-200 lg:block border-b border-white/5">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-8 py-2 text-xs font-medium">
-          <div className="flex items-center gap-6">
-            <a href={`mailto:${org.email}`} className="flex items-center gap-1.5 text-slate-300 hover:text-cyan-300 transition">
-              <Mail className="h-3.5 w-3.5 text-cyan-400" />
-              {org.email}
-            </a>
-            <a href={`tel:${org.phoneHref}`} className="flex items-center gap-1.5 text-slate-300 hover:text-cyan-300 transition">
-              <Phone className="h-3.5 w-3.5 text-cyan-400" />
-              {org.phone}
-            </a>
-            <span className="text-slate-500">|</span>
-            <span className="text-slate-400 font-normal">
-              {org.cac}
-            </span>
-          </div>
-          <div className="flex items-center gap-4 text-slate-300">
-            <a
-              href={org.socials?.facebook || "https://www.facebook.com/share/1DG9TDLBFE/"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-cyan-300 hover:text-white transition"
-            >
-              Facebook: Prime STEM Nigeria
-            </a>
-            <span className="text-slate-600">•</span>
-            <Link href="/news" className="hover:text-cyan-300 transition">
-              2026/2027 Calendar
-            </Link>
-            <span className="text-slate-600">•</span>
-            <Link
-              href="/exam"
-              className="inline-flex items-center gap-1 rounded-full bg-cyan-500/15 px-2.5 py-0.5 text-[0.7rem] font-bold text-cyan-300 ring-1 ring-cyan-400/30 hover:bg-cyan-500/25 transition"
-            >
-              Exam Portal
-            </Link>
-            <span className="text-slate-600">•</span>
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-1 text-[0.7rem] font-bold text-slate-400 hover:text-amber-300 transition"
-              title="Admin Portal"
-            >
-              <Lock className="h-3 w-3" /> Admin
-            </Link>
-          </div>
-        </div>
-      </div>
-
       {/* Main nav */}
       <div className="border-b border-slate-100 bg-white/95 backdrop-blur-xl shadow-xs">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:px-8">

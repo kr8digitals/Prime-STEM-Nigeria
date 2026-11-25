@@ -1137,7 +1137,7 @@ export default function AdminPage() {
                       <label className="block text-slate-300 font-bold mb-1">Competition Name</label>
                       <input
                         name="competition"
-                        defaultValue={editingWinner?.competition || "Nigerian STEM Championship"}
+                        defaultValue={editingWinner?.competition || "Annual National Science Championship"}
                         className="w-full rounded-xl border border-white/10 bg-black/40 p-2.5 text-white"
                       />
                     </div>
