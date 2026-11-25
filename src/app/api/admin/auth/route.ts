@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     if (verifyAdminPassword(password)) {
-      const token = createAdminSessionToken();
+      const token = createAdminSessionToken(password);
       const response = NextResponse.json({
         success: true,
         message: "Authenticated successfully",
