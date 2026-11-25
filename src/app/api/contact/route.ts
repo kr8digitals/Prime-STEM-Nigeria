@@ -3,6 +3,10 @@ import { z } from "zod";
 import { db } from "@/db";
 import { contactMessages } from "@/db/schema";
 import { recordContactMessage } from "@/lib/content-store";
+import {
+  sendAdminAlertEmail,
+  sendContactAcknowledgementEmail,
+} from "@/lib/email";
 
 const schema = z.object({
   fullName: z.string().min(2, "Please enter your full name."),
@@ -27,8 +31,7 @@ export async function POST(request: Request) {
 
     const { fullName, email, phone, category, subject, message } = parsed.data;
 
-    // Save to file-based content store (persisted for Admin Powerhouse)
-    recordContactMessage({
+    const saved = recordContactMessage({
       fullName,
       email,
       phone,
@@ -37,7 +40,6 @@ export async function POST(request: Request) {
       message,
     });
 
-    // Also attempt DB insert if sqlite exists
     try {
       await db.insert(contactMessages).values({
         fullName,
@@ -50,6 +52,26 @@ export async function POST(request: Request) {
     } catch (dbErr) {
       console.warn("DB insert fallback:", dbErr);
     }
+
+    await Promise.allSettled([
+      sendContactAcknowledgementEmail({
+        name: fullName,
+        email,
+        subject,
+        message,
+      }),
+      sendAdminAlertEmail({
+        subject: `Contact Enquiry: ${subject} (${fullName})`,
+        heading: "New Contact Form Message",
+        detailsHtml: `
+          <p><strong>From:</strong> ${fullName} (${category})</p>
+          <p><strong>Email:</strong> ${email} &bull; <strong>Phone:</strong> ${phone || "N/A"}</p>
+          <p><strong>Subject:</strong> ${subject}</p>
+          <p><strong>Message:</strong><br/>${message}</p>
+        `,
+        relatedEntityId: String(saved.id),
+      }),
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {

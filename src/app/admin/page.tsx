@@ -46,6 +46,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useContent, SiteContent } from "@/context/content-context";
+import ExamManagementPanel from "@/components/admin/exam-management-panel";
 
 export default function AdminPage() {
   const { content, updateContent, resetToDefaults, refreshContent } = useContent();
@@ -61,6 +62,7 @@ export default function AdminPage() {
   // Active Tab
   const [activeTab, setActiveTab] = useState<
     | "overview"
+    | "examinations"
     | "registrations"
     | "messages"
     | "announcements"
@@ -103,14 +105,26 @@ export default function AdminPage() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Check saved session on mount
+  // Verify server-side httpOnly HMAC admin session on mount
   useEffect(() => {
-    const saved = localStorage.getItem("prime_admin_session");
-    if (saved === "authenticated") {
-      setIsAuthenticated(true);
-      fetchSubmissions();
-    }
-    setAuthChecked(true);
+    fetch("/api/admin/auth", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : { authenticated: false }))
+      .then((data) => {
+        if (data?.authenticated) {
+          setIsAuthenticated(true);
+          localStorage.setItem("prime_admin_session", "authenticated");
+          fetchSubmissions();
+        } else {
+          setIsAuthenticated(false);
+          localStorage.removeItem("prime_admin_session");
+        }
+      })
+      .catch(() => {
+        setIsAuthenticated(false);
+      })
+      .finally(() => {
+        setAuthChecked(true);
+      });
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -141,7 +155,8 @@ export default function AdminPage() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await fetch("/api/admin/auth", { method: "DELETE" }).catch(() => {});
     setIsAuthenticated(false);
     localStorage.removeItem("prime_admin_session");
     setPasswordInput("");
@@ -405,6 +420,7 @@ export default function AdminPage() {
         <div className="mx-auto max-w-7xl mt-3 flex items-center gap-1 overflow-x-auto pb-1 text-xs font-bold scrollbar-none">
           {[
             { id: "overview", label: "Command Center", icon: Layers },
+            { id: "examinations", label: "Examinations & AI Proctoring", icon: ShieldCheck },
             { id: "registrations", label: `Registrations (${registrations.length})`, icon: Users },
             { id: "messages", label: `Inquiries (${messages.length})`, icon: MessageSquare },
             { id: "announcements", label: "Exam Banner & Fee", icon: Sparkles },
@@ -434,6 +450,15 @@ export default function AdminPage() {
 
       {/* Main Admin Content Body */}
       <main className="flex-1 p-5 sm:p-8 max-w-7xl mx-auto w-full">
+        {/* =========================================================
+            TAB: EXAMINATIONS, CODES, AUTOMATIC MARKING & AI PROCTORING
+        ========================================================= */}
+        {activeTab === "examinations" && (
+          <div className="animate-fadeIn">
+            <ExamManagementPanel showToast={showToast} />
+          </div>
+        )}
+
         {/* =========================================================
             TAB 1: COMMAND CENTER / OVERVIEW
         ========================================================= */}
@@ -495,7 +520,16 @@ export default function AdminPage() {
                 Instantly modify key site sections, export registration records, or update payment directives.
               </p>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <button
+                  onClick={() => setActiveTab("examinations")}
+                  className="rounded-2xl border border-cyan-400/30 bg-cyan-500/10 p-4 text-left hover:border-cyan-400 hover:bg-cyan-500/20 transition"
+                >
+                  <ShieldCheck className="h-5 w-5 text-cyan-300 mb-2" />
+                  <p className="text-sm font-bold text-white">Exams &amp; AI Proctoring</p>
+                  <p className="text-xs text-slate-300 mt-1">Questions, codes, scores &amp; video vault</p>
+                </button>
+
                 <button
                   onClick={() => setActiveTab("registrations")}
                   className="rounded-2xl border border-white/10 bg-white/5 p-4 text-left hover:border-cyan-400/50 hover:bg-white/10 transition"

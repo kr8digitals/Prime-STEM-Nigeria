@@ -165,6 +165,13 @@ export default function Header() {
             </Link>
             <span className="text-slate-600">•</span>
             <Link
+              href="/exam"
+              className="inline-flex items-center gap-1 rounded-full bg-cyan-500/15 px-2.5 py-0.5 text-[0.7rem] font-bold text-cyan-300 ring-1 ring-cyan-400/30 hover:bg-cyan-500/25 transition"
+            >
+              Exam Portal
+            </Link>
+            <span className="text-slate-600">•</span>
+            <Link
               href="/admin"
               className="inline-flex items-center gap-1 text-[0.7rem] font-bold text-slate-400 hover:text-amber-300 transition"
               title="Admin Portal"
@@ -253,7 +260,13 @@ export default function Header() {
             )}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/exam"
+              className="hidden rounded-full border border-blue-200 bg-blue-50/70 px-4 py-2 text-xs font-extrabold text-[#172554] transition hover:border-blue-400 hover:bg-blue-100 md:inline-flex"
+            >
+              Exam Portal
+            </Link>
             <Link
               href="/register"
               className="hidden rounded-full bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-blue-700/35 sm:inline-flex"
@@ -319,6 +332,13 @@ export default function Header() {
               )}
 
               <div className="pt-3 border-t border-slate-100 space-y-2">
+                <Link
+                  href="/exam"
+                  onClick={() => setOpen(false)}
+                  className="block rounded-full border border-blue-200 bg-blue-50 px-6 py-3 text-center text-sm font-bold text-[#172554]"
+                >
+                  Online Examination Portal
+                </Link>
                 <Link
                   href="/register"
                   onClick={() => setOpen(false)}

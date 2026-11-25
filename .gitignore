@@ -29,6 +29,11 @@
 .env*.local
 .env
 
+# runtime proctoring recordings vault & local runtime caches (wipeable, never commit raw videos)
+/data/proctoring-vault/
+/data/exam-system.json
+/data/*.tmp
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

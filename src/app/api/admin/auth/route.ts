@@ -1,27 +1,39 @@
 import { NextResponse } from "next/server";
+import {
+  ADMIN_COOKIE_NAME,
+  createAdminSessionToken,
+  requireAdminAuth,
+  verifyAdminPassword,
+} from "@/lib/admin-auth";
 
-const ADMIN_PASSWORD = "Pr!me@Ad?nàccess";
-const SESSION_TOKEN = "prime_stem_admin_secure_session_token_2026";
+export const dynamic = "force-dynamic";
+
+export async function GET(request: Request) {
+  const denied = requireAdminAuth(request);
+  if (denied) {
+    return NextResponse.json({ authenticated: false }, { status: 401 });
+  }
+  return NextResponse.json({ authenticated: true });
+}
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { password } = body;
 
-    if (!password) {
+    if (!password || typeof password !== "string") {
       return NextResponse.json({ error: "Password is required" }, { status: 400 });
     }
 
-    if (password === ADMIN_PASSWORD) {
+    if (verifyAdminPassword(password)) {
+      const token = createAdminSessionToken();
       const response = NextResponse.json({
         success: true,
         message: "Authenticated successfully",
-        token: SESSION_TOKEN,
       });
 
-      // Set cookie for persistence
-      response.cookies.set("prime_admin_auth", SESSION_TOKEN, {
-        httpOnly: false, // allow client-side reading for instant UI state
+      response.cookies.set(ADMIN_COOKIE_NAME, token, {
+        httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
@@ -35,7 +47,22 @@ export async function POST(request: Request) {
       { error: "Access Denied: Incorrect administrator password" },
       { status: 401 }
     );
-  } catch (error) {
-    return NextResponse.json({ error: "Server authentication error" }, { status: 500 });
+  } catch {
+    return NextResponse.json(
+      { error: "Server authentication error" },
+      { status: 500 }
+    );
   }
+}
+
+export async function DELETE() {
+  const response = NextResponse.json({ success: true });
+  response.cookies.set(ADMIN_COOKIE_NAME, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+  return response;
 }
