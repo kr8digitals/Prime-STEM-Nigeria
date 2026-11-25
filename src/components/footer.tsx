@@ -1,7 +1,8 @@
 "use client";
 
-import { CreditCard, Mail, MapPin, Phone, Lock } from "lucide-react";
+import { CreditCard, Mail, MapPin, Phone, Lock, CheckCircle2, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { useContent } from "@/context/content-context";
 
 function FacebookIcon({ className }: { className?: string }) {
@@ -40,6 +41,35 @@ export default function Footer() {
   const { content } = useContent();
   const org = content.organization;
   const programs = content.programs;
+  const [subEmail, setSubEmail] = useState("");
+  const [subStatus, setSubStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [subMessage, setSubMessage] = useState("");
+
+  async function handleNewsletterSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!subEmail.trim()) return;
+    setSubStatus("loading");
+    setSubMessage("");
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: subEmail.trim(), source: "footer" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSubStatus("error");
+        setSubMessage(data.error || "Could not subscribe.");
+        return;
+      }
+      setSubStatus("done");
+      setSubMessage(data.message || "Subscribed to Prime STEM updates!");
+      setSubEmail("");
+    } catch {
+      setSubStatus("error");
+      setSubMessage("Network error. Please try again.");
+    }
+  }
 
   const navLinks = [
     { label: "Home", href: "/" },
@@ -171,6 +201,14 @@ export default function Footer() {
                 </li>
               ))}
               <li>
+                <Link
+                  href="/exam"
+                  className="inline-flex items-center gap-1 text-sm font-bold text-cyan-300 hover:text-white"
+                >
+                  Online Exam Portal →
+                </Link>
+              </li>
+              <li>
                 <a
                   href="https://selar.com/k484f98wdl"
                   target="_blank"
@@ -240,7 +278,49 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-xs text-slate-500 sm:flex-row">
+        {/* Newsletter Subscription Bar */}
+        <div className="mt-12 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+            <div>
+              <h4 className="text-base font-extrabold text-white">
+                Subscribe to Official Competition &amp; Examination Updates
+              </h4>
+              <p className="mt-1 text-xs text-slate-400">
+                Receive competition schedules, examination timetable alerts, and official result announcements.
+              </p>
+            </div>
+            <form onSubmit={handleNewsletterSubmit} className="flex w-full max-w-md flex-col gap-2 sm:flex-row">
+              <input
+                type="email"
+                required
+                value={subEmail}
+                onChange={(e) => setSubEmail(e.target.value)}
+                placeholder="Enter school, parent, or student email"
+                className="flex-1 rounded-xl border border-white/15 bg-[#0B132B]/80 px-4 py-2.5 text-sm text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={subStatus === "loading"}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-110 disabled:opacity-60"
+              >
+                {subStatus === "loading" ? "Subscribing..." : "Subscribe"}
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </form>
+          </div>
+          {subMessage && (
+            <p
+              className={`mt-2.5 flex items-center gap-1.5 text-xs font-semibold ${
+                subStatus === "error" ? "text-red-300" : "text-emerald-300"
+              }`}
+            >
+              {subStatus === "done" && <CheckCircle2 className="h-3.5 w-3.5" />}
+              {subMessage}
+            </p>
+          )}
+        </div>
+
+        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-xs text-slate-500 sm:flex-row">
           <p>
             © {new Date().getFullYear()} {org.name}. CAC Registered Education Institution. All rights reserved.
           </p>

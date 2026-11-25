@@ -1,17 +1,9 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
 import type { ReactNode } from "react";
+import "@fontsource-variable/plus-jakarta-sans";
 import "./globals.css";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import LayoutChrome from "@/components/layout-chrome";
 import { ContentProvider } from "@/context/content-context";
-import { InteractiveFloatingWidget } from "@/components/ui";
-
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-plus-jakarta",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -39,13 +31,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={plusJakarta.variable}>
+    <html lang="en">
       <body className="min-h-screen bg-white text-[#0F172A] antialiased">
         <ContentProvider>
-          <Header />
-          <main>{children}</main>
-          <Footer />
-          <InteractiveFloatingWidget />
+          <LayoutChrome>{children}</LayoutChrome>
         </ContentProvider>
       </body>
     </html>

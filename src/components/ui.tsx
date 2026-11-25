@@ -333,7 +333,7 @@ export function Counter({
             started.current = true;
             const start = performance.now();
             const tick = (now: number) => {
-              const progress = Math.min((now - start) / duration, 1);
+              const progress = Math.max(0, Math.min((now - start) / duration, 1));
               const eased = 1 - Math.pow(1 - progress, 3);
               setDisplay(Math.round(eased * value));
               if (progress < 1) requestAnimationFrame(tick);

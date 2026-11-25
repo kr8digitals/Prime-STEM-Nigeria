@@ -1,8 +1,17 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { CheckCircle2, Loader2, Send, UserPlus } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  Laptop,
+  Loader2,
+  Send,
+  ShieldCheck,
+  UserPlus,
+} from "lucide-react";
+import Link from "next/link";
 import { useContent } from "@/context/content-context";
 import { cx } from "@/components/ui";
 
@@ -25,6 +34,30 @@ const registerSchema = z.object({
 });
 
 type FieldErrors = Record<string, string>;
+
+interface PublicScheduleItem {
+  id: string;
+  examId: string;
+  label: string;
+  startsAt: string;
+  endsAt: string;
+  timezone: string;
+  capacity: number;
+  remainingSeats: number;
+}
+
+interface PublicExamItem {
+  id: string;
+  slug: string;
+  title: string;
+  competitionLabel: string;
+  programSlug: string;
+  category: string;
+  description: string;
+  durationMinutes: number;
+  proctoringRequired: boolean;
+  schedules: PublicScheduleItem[];
+}
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
@@ -57,12 +90,47 @@ function SubmitButton({
   );
 }
 
-function SuccessMessage({ title, message }: { title: string; message: string }) {
+function SuccessMessage({
+  title,
+  message,
+  examSummary,
+}: {
+  title: string;
+  message: string;
+  examSummary?: {
+    examTitle: string;
+    scheduleLabel: string;
+  } | null;
+}) {
   return (
     <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-center animate-fadeIn">
       <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
       <h3 className="mt-3 text-lg font-extrabold text-emerald-800">{title}</h3>
       <p className="mt-1 text-sm text-emerald-700">{message}</p>
+      {examSummary && (
+        <div className="mt-5 rounded-xl border border-emerald-200 bg-white p-4 text-left text-xs text-slate-700 space-y-1.5 shadow-xs">
+          <p className="font-extrabold text-[#172554] text-sm">
+            Online Examination Slot Reserved (Pending Verification)
+          </p>
+          <p>
+            <strong>Examination:</strong> {examSummary.examTitle}
+          </p>
+          <p>
+            <strong>Selected Schedule:</strong> {examSummary.scheduleLabel}
+          </p>
+          <p className="text-blue-800 bg-blue-50 p-2.5 rounded-lg border border-blue-100 mt-2">
+            <strong>Exam Access Code Activation:</strong> Once the Prime STEM Examination Office confirms your registration/payment, your active Examination Access Code and instructions will be automatically emailed to your registered inbox.
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/exam"
+              className="inline-flex items-center gap-1.5 font-bold text-[#2563EB] hover:underline"
+            >
+              Visit Online Examination Portal →
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -128,39 +196,88 @@ export function ContactForm() {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label className={labelClasses} htmlFor="ct-name">Full Name *</label>
-          <input id="ct-name" name="fullName" placeholder="e.g. Dr. Ngozi Eze" className={inputClasses} />
+          <label className={labelClasses} htmlFor="ct-name">
+            Full Name *
+          </label>
+          <input
+            id="ct-name"
+            name="fullName"
+            placeholder="e.g. Dr. Ngozi Eze"
+            className={inputClasses}
+          />
           <FieldError message={errors.fullName} />
         </div>
         <div>
-          <label className={labelClasses} htmlFor="ct-email">Email Address *</label>
-          <input id="ct-email" name="email" type="email" placeholder="you@example.com" className={inputClasses} />
+          <label className={labelClasses} htmlFor="ct-email">
+            Email Address *
+          </label>
+          <input
+            id="ct-email"
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            className={inputClasses}
+          />
           <FieldError message={errors.email} />
         </div>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label className={labelClasses} htmlFor="ct-phone">Phone Number</label>
-          <input id="ct-phone" name="phone" placeholder="+234 800 000 0000" className={inputClasses} />
+          <label className={labelClasses} htmlFor="ct-phone">
+            Phone Number
+          </label>
+          <input
+            id="ct-phone"
+            name="phone"
+            placeholder="+234 800 000 0000"
+            className={inputClasses}
+          />
         </div>
         <div>
-          <label className={labelClasses} htmlFor="ct-category">I Am A *</label>
-          <select id="ct-category" name="category" className={inputClasses} defaultValue="">
-            <option value="" disabled>Select one…</option>
-            {["Student", "Parent/Guardian", "Teacher", "School Administrator", "Partner/Sponsor", "Other"].map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
+          <label className={labelClasses} htmlFor="ct-category">
+            I Am A *
+          </label>
+          <select
+            id="ct-category"
+            name="category"
+            className={inputClasses}
+            defaultValue=""
+          >
+            <option value="" disabled>
+              Select one…
+            </option>
+            {[
+              "Student",
+              "Parent/Guardian",
+              "Teacher",
+              "School Administrator",
+              "Partner/Sponsor",
+              "Other",
+            ].map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
             ))}
           </select>
           <FieldError message={errors.category} />
         </div>
       </div>
       <div>
-        <label className={labelClasses} htmlFor="ct-subject">Subject *</label>
-        <input id="ct-subject" name="subject" placeholder="e.g. Inquiry about 5th STEM Kids Championship" className={inputClasses} />
+        <label className={labelClasses} htmlFor="ct-subject">
+          Subject *
+        </label>
+        <input
+          id="ct-subject"
+          name="subject"
+          placeholder="e.g. Inquiry about 5th STEM Kids Championship"
+          className={inputClasses}
+        />
         <FieldError message={errors.subject} />
       </div>
       <div>
-        <label className={labelClasses} htmlFor="ct-message">Your Message *</label>
+        <label className={labelClasses} htmlFor="ct-message">
+          Your Message *
+        </label>
         <textarea
           id="ct-message"
           name="message"
@@ -184,8 +301,31 @@ export function ContactForm() {
   );
 }
 
+function formatScheduleWindow(startsAt: string, endsAt: string) {
+  try {
+    const startStr = new Date(startsAt).toLocaleString("en-NG", {
+      timeZone: "Africa/Lagos",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const endStr = new Date(endsAt).toLocaleString("en-NG", {
+      timeZone: "Africa/Lagos",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${startStr} – ${endStr} WAT`;
+  } catch {
+    return `${startsAt} – ${endsAt}`;
+  }
+}
+
 // -------------------------------------------------------------
-// REGISTER FORM
+// REGISTER FORM (Integrated with Online Examination Scheduling)
 // -------------------------------------------------------------
 export function RegisterForm() {
   const { content } = useContent();
@@ -194,6 +334,59 @@ export function RegisterForm() {
   const [pending, setPending] = useState(false);
   const [success, setSuccess] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [examSummary, setExamSummary] = useState<{
+    examTitle: string;
+    scheduleLabel: string;
+  } | null>(null);
+
+  const [publicExams, setPublicExams] = useState<PublicExamItem[]>([]);
+  const [selectedProgramName, setSelectedProgramName] = useState("");
+  const [enrollOnlineExam, setEnrollOnlineExam] = useState(true);
+  const [selectedExamId, setSelectedExamId] = useState("");
+  const [selectedScheduleId, setSelectedScheduleId] = useState("");
+  const [schoolName, setSchoolName] = useState("");
+  const [classLevel, setClassLevel] = useState("");
+  const [guardianName, setGuardianName] = useState("");
+  const [parentConsentGiven, setParentConsentGiven] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/exams/public", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.examinations) {
+          setPublicExams(data.examinations);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Match programme selection to linked online examinations
+  const matchingExams = useMemo(() => {
+    if (!selectedProgramName) return publicExams;
+    const matchedProg = programs.find(
+      (p) => `${p.name}` === selectedProgramName || selectedProgramName.includes(p.name)
+    );
+    if (!matchedProg) return [];
+    return publicExams.filter((e) => e.programSlug === matchedProg.slug);
+  }, [selectedProgramName, programs, publicExams]);
+
+  useEffect(() => {
+    if (matchingExams.length > 0) {
+      if (!matchingExams.some((e) => e.id === selectedExamId)) {
+        const firstExam = matchingExams[0];
+        setSelectedExamId(firstExam.id);
+        setSelectedScheduleId(firstExam.schedules[0]?.id || "");
+      }
+    } else {
+      setSelectedExamId("");
+      setSelectedScheduleId("");
+    }
+  }, [matchingExams, selectedExamId]);
+
+  const activeExam = useMemo(
+    () => publicExams.find((e) => e.id === selectedExamId) || null,
+    [publicExams, selectedExamId]
+  );
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -213,17 +406,57 @@ export function RegisterForm() {
       return;
     }
 
+    const isExamEnrollment =
+      enrollOnlineExam && matchingExams.length > 0 && Boolean(selectedExamId);
+
+    if (isExamEnrollment) {
+      if (!selectedScheduleId) {
+        setServerError("Please select an available examination date & time slot.");
+        return;
+      }
+      if (!schoolName.trim()) {
+        setServerError("Please enter the candidate's School or Institution name.");
+        return;
+      }
+      if (!parentConsentGiven) {
+        setServerError(
+          "Please confirm Parent, Legal Guardian, or Authorised School consent to proceed with online proctored examination enrollment."
+        );
+        return;
+      }
+    }
+
     setPending(true);
     try {
+      const payload = {
+        ...result.data,
+        ...(isExamEnrollment
+          ? {
+              examId: selectedExamId,
+              scheduleId: selectedScheduleId,
+              schoolName: schoolName.trim(),
+              classLevel: classLevel.trim(),
+              guardianName: guardianName.trim(),
+              parentConsentGiven,
+            }
+          : {}),
+      };
+
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(result.data),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (!res.ok) {
         setServerError(json.error ?? "Something went wrong. Please try again.");
         return;
+      }
+      if (json.examRegistration) {
+        setExamSummary({
+          examTitle: json.examRegistration.examTitle,
+          scheduleLabel: json.examRegistration.scheduleLabel,
+        });
       }
       setSuccess(true);
       form.reset();
@@ -238,7 +471,8 @@ export function RegisterForm() {
     return (
       <SuccessMessage
         title="Registration Received!"
-        message="Thank you for registering with Prime STEM Nigeria. Our examination coordinator will contact you with candidate confirmation and syllabus details."
+        message="Thank you for registering with Prime STEM Nigeria. Check your email for your confirmation summary."
+        examSummary={examSummary}
       />
     );
   }
@@ -247,51 +481,240 @@ export function RegisterForm() {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label className={labelClasses} htmlFor="rg-name">Full Name *</label>
-          <input id="rg-name" name="fullName" placeholder="e.g. Adewale Johnson" className={inputClasses} />
+          <label className={labelClasses} htmlFor="rg-name">
+            Candidate / Applicant Full Name *
+          </label>
+          <input
+            id="rg-name"
+            name="fullName"
+            placeholder="e.g. Adewale Johnson"
+            className={inputClasses}
+          />
           <FieldError message={errors.fullName} />
         </div>
         <div>
-          <label className={labelClasses} htmlFor="rg-email">Email Address *</label>
-          <input id="rg-email" name="email" type="email" placeholder="you@example.com" className={inputClasses} />
+          <label className={labelClasses} htmlFor="rg-email">
+            Email Address (For Exam Access Code) *
+          </label>
+          <input
+            id="rg-email"
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            className={inputClasses}
+          />
           <FieldError message={errors.email} />
         </div>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label className={labelClasses} htmlFor="rg-phone">Phone Number *</label>
-          <input id="rg-phone" name="phone" placeholder="+234 800 000 0000" className={inputClasses} />
+          <label className={labelClasses} htmlFor="rg-phone">
+            Phone / WhatsApp Number *
+          </label>
+          <input
+            id="rg-phone"
+            name="phone"
+            placeholder="+234 800 000 0000"
+            className={inputClasses}
+          />
           <FieldError message={errors.phone} />
         </div>
         <div>
-          <label className={labelClasses} htmlFor="rg-category">I Am A *</label>
-          <select id="rg-category" name="category" className={inputClasses} defaultValue="">
-            <option value="" disabled>Select one…</option>
-            {["Student", "Parent/Guardian", "School", "Teacher", "Organization", "Partner", "Other"].map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
+          <label className={labelClasses} htmlFor="rg-category">
+            I Am Registering As *
+          </label>
+          <select
+            id="rg-category"
+            name="category"
+            className={inputClasses}
+            defaultValue=""
+          >
+            <option value="" disabled>
+              Select one…
+            </option>
+            {[
+              "Student",
+              "Parent/Guardian",
+              "School",
+              "Teacher",
+              "Organization",
+              "Partner",
+              "Other",
+            ].map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
             ))}
           </select>
           <FieldError message={errors.category} />
         </div>
       </div>
       <div>
-        <label className={labelClasses} htmlFor="rg-program">Programme *</label>
-        <select id="rg-program" name="program" className={inputClasses} defaultValue="">
-          <option value="" disabled>Select a programme…</option>
+        <label className={labelClasses} htmlFor="rg-program">
+          Competition / Programme *
+        </label>
+        <select
+          id="rg-program"
+          name="program"
+          className={inputClasses}
+          value={selectedProgramName}
+          onChange={(e) => setSelectedProgramName(e.target.value)}
+        >
+          <option value="" disabled>
+            Select a programme…
+          </option>
           {programs.map((p) => (
-            <option key={p.slug} value={p.name}>{p.name} ({p.shortName})</option>
+            <option key={p.slug} value={p.name}>
+              {p.name} ({p.shortName})
+            </option>
           ))}
           <option value="Other STEM Event">Other STEM Event / Tour</option>
         </select>
         <FieldError message={errors.program} />
       </div>
+
+      {/* Dynamic Online Examination Slot Selector when competition has online exams */}
+      {selectedProgramName && matchingExams.length > 0 && (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Laptop className="h-5 w-5 text-[#2563EB]" />
+              <span className="text-sm font-extrabold text-[#172554]">
+                Online Computer-Based Examination Enrollment
+              </span>
+            </div>
+            <label className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={enrollOnlineExam}
+                onChange={(e) => setEnrollOnlineExam(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-blue-600"
+              />
+              Reserve Online Exam Slot
+            </label>
+          </div>
+
+          {enrollOnlineExam && (
+            <div className="space-y-4 pt-1">
+              <div>
+                <label className={labelClasses} htmlFor="rg-exam-track">
+                  Select Examination Track / Category *
+                </label>
+                <select
+                  id="rg-exam-track"
+                  className={inputClasses}
+                  value={selectedExamId}
+                  onChange={(e) => {
+                    const nextId = e.target.value;
+                    setSelectedExamId(nextId);
+                    const nextExam = publicExams.find((ex) => ex.id === nextId);
+                    setSelectedScheduleId(nextExam?.schedules[0]?.id || "");
+                  }}
+                >
+                  {matchingExams.map((ex) => (
+                    <option key={ex.id} value={ex.id}>
+                      {ex.title} ({ex.category} • {ex.durationMinutes} mins)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className={labelClasses} htmlFor="rg-exam-schedule">
+                  Select Available Examination Date &amp; Time Slot *
+                </label>
+                {activeExam && activeExam.schedules.length > 0 ? (
+                  <select
+                    id="rg-exam-schedule"
+                    className={inputClasses}
+                    value={selectedScheduleId}
+                    onChange={(e) => setSelectedScheduleId(e.target.value)}
+                  >
+                    {activeExam.schedules.map((slot) => (
+                      <option key={slot.id} value={slot.id}>
+                        {slot.label} — {formatScheduleWindow(slot.startsAt, slot.endsAt)} (
+                        {slot.remainingSeats} seats open)
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
+                    All online slots for this track are currently full or closed. Uncheck &ldquo;Reserve Online Exam Slot&rdquo; to submit a general/physical registration inquiry.
+                  </p>
+                )}
+                <p className="mt-1.5 flex items-center gap-1.5 text-[0.72rem] text-slate-600">
+                  <CalendarClock className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                  Candidates may only select from official Administrator-published examination windows.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <label className={labelClasses} htmlFor="rg-school">
+                    School / Institution *
+                  </label>
+                  <input
+                    id="rg-school"
+                    value={schoolName}
+                    onChange={(e) => setSchoolName(e.target.value)}
+                    placeholder="e.g.Therbow School Zaria"
+                    className={inputClasses}
+                  />
+                </div>
+                <div>
+                  <label className={labelClasses} htmlFor="rg-class">
+                    Class / Level
+                  </label>
+                  <input
+                    id="rg-class"
+                    value={classLevel}
+                    onChange={(e) => setClassLevel(e.target.value)}
+                    placeholder="e.g. Primary 5 / JSS 2 / SS 2"
+                    className={inputClasses}
+                  />
+                </div>
+                <div>
+                  <label className={labelClasses} htmlFor="rg-guardian">
+                    Parent / School Rep Name
+                  </label>
+                  <input
+                    id="rg-guardian"
+                    value={guardianName}
+                    onChange={(e) => setGuardianName(e.target.value)}
+                    placeholder="Guardian or Coordinator"
+                    className={inputClasses}
+                  />
+                </div>
+              </div>
+
+              <label className="flex items-start gap-3 rounded-xl border border-blue-200 bg-white p-3.5 text-xs leading-relaxed text-slate-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={parentConsentGiven}
+                  onChange={(e) => setParentConsentGiven(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600"
+                />
+                <span>
+                  <strong className="text-[#172554] inline-flex items-center gap-1">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" /> NDPA Child Protection &amp; AI Proctoring Consent:
+                  </strong>{" "}
+                  As a Parent, Legal Guardian, or Authorised School Representative, I consent to the candidate participating in the Prime STEM online examination, including temporary non-public screen, webcam, and microphone proctoring recordings used solely for examination integrity review.
+                </span>
+              </label>
+            </div>
+          )}
+        </div>
+      )}
+
       <div>
-        <label className={labelClasses} htmlFor="rg-message">Additional Notes or Candidate List</label>
+        <label className={labelClasses} htmlFor="rg-message">
+          Additional Notes or Payment Reference
+        </label>
         <textarea
           id="rg-message"
           name="message"
-          rows={4}
-          placeholder="Number of candidates, school name, preferred examination format (Physical/Online)…"
+          rows={3}
+          placeholder="UBA transfer reference, multiple school candidates, or preferred examination notes…"
           className={cx(inputClasses, "resize-y")}
         />
       </div>
