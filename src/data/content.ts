@@ -191,10 +191,10 @@ export type StatItem = {
 };
 
 export const STATS: StatItem[] = [
-  { value: 5000, suffix: "+", label: "Students Empowered" },
-  { value: 350, suffix: "+", label: "Partner Schools Nationwide" },
-  { value: 2700000, suffix: "+", label: "₦ In Prizes Awarded", isCurrency: true },
-  { value: 36, suffix: "+ FCT", label: "States Reached", plain: true },
+  { value: 20000, suffix: "", label: "Schools" },
+  { value: 250000, suffix: "", label: "Students / Pupils" },
+  { value: 41000, suffix: "", label: "Teachers" },
+  { value: 31, suffix: "M", label: "Awards Since 2022", isCurrency: true },
 ];
 
 // -------------------------------------------------------------
@@ -204,7 +204,7 @@ export const HELP_CARDS = [
   {
     title: "STEM Competitions",
     description:
-      "Engage pupils and secondary school students in prestigious national & continental challenges including STEM Kids Championship, AOCT, and Nigerian STEM Championship.",
+      "Engage pupils and secondary school students in prestigious national & continental challenges including STEM Kids Championship, AOCT, and Annual National Science Championship.",
     href: "/programs",
     icon: "trophy",
   },
@@ -345,14 +345,14 @@ export const PROGRAMS: Program[] = [
   },
   {
     slug: "annual-national-science-championship",
-    name: "Nigerian STEM Championship / ANSC",
+    name: "Annual National Science Championship (ANSC)",
     shortName: "ANSC",
     image: IMAGES.hero,
     tagline: "Nigeria's Most Inclusive & Competitive Nationwide STEM Challenge",
     description:
       "The flagship nationwide championship attracting hundreds of schools and thousands of students. Over ₦2.7 million awarded to winning schools and students in recent editions!",
     overview:
-      "Open to both primary and secondary school students, the Nigerian STEM Championship (also known as the Annual National Science Championship - ANSC) covers a broad spectrum of Mathematics and Science disciplines. It offers a level playing field where brilliance from every state is discovered and lavishly celebrated with major cash prizes, trophies, and nationwide acclaim.",
+      "Open to both primary and secondary school students, the Annual National Science Championship (ANSC) covers a broad spectrum of Mathematics and Science disciplines. It offers a level playing field where brilliance from every state is discovered and lavishly celebrated with major cash prizes, trophies, and nationwide acclaim.",
     targetAudience: "Primary & Secondary School Students (All Levels)",
     cashPrizes: "₦1,000,000 (Primary Winner), ₦700,000 & ₦500,000 (Secondary Winners), Runner-up cash prizes",
     objectives: [
@@ -668,7 +668,7 @@ export const EVENTS: EventItem[] = [
   {
     sn: 5,
     term: "Second Term",
-    title: "Annual National Science Championship (ANSC) / Nigerian STEM Championship",
+    title: "Annual National Science Championship (ANSC)",
     date: "March 20, 2027",
     location: "All States in Nigeria + FCT",
     format: "National Examination & Finals",
@@ -737,7 +737,7 @@ export const WINNERS: Winner[] = [
     name: "Enwere Ikenna Kingsley",
     school: "Bright Sun College, Ikeja",
     state: "Lagos State",
-    competition: "Nigerian STEM Championship",
+    competition: "Annual National Science Championship",
     category: "Senior Secondary Category",
     achievement: "1st Position — National Champion",
     prize: "₦500,000 Cash Prize + Plaque",
@@ -749,7 +749,7 @@ export const WINNERS: Winner[] = [
     name: "NTIC Abuja STEM Team & Amah Chibuike Augustine",
     school: "Nigerian Tulip International Colleges (NTIC Abuja Boys)",
     state: "Abuja FCT",
-    competition: "Nigerian STEM Championship",
+    competition: "Annual National Science Championship",
     category: "Junior Secondary Category",
     achievement: "1st Position — National Champion",
     prize: "₦700,000 & ₦300,000 Cash Prizes + Medals",
@@ -761,7 +761,7 @@ export const WINNERS: Winner[] = [
     name: "Lebechi Chibugom, Nwaka Precious & Iwuagwu Chinedu",
     school: "Diamond Special Schools, Owerri",
     state: "Imo State",
-    competition: "Nigerian STEM Championship",
+    competition: "Annual National Science Championship",
     category: "Primary Category (1st, 2nd & 3rd Sweep)",
     achievement: "National Champion School",
     prize: "₦1,000,000 (One Million Naira) + Medals",
@@ -773,7 +773,7 @@ export const WINNERS: Winner[] = [
     name: "Obiyomi Oluwaseyifunmi David",
     school: "Preston International School, Akure",
     state: "Ondo State",
-    competition: "Nigerian STEM Championship",
+    competition: "Annual National Science Championship",
     category: "Junior Secondary Category",
     achievement: "2nd Position — 1st Runner-Up",
     prize: "₦300,000 Cash Prize + Plaque",
@@ -785,7 +785,7 @@ export const WINNERS: Winner[] = [
     name: "Emmanuel Saviour Effiong",
     school: "Gospel Land Prime School, Uyo",
     state: "Akwa Ibom State",
-    competition: "Nigerian STEM Championship",
+    competition: "Annual National Science Championship",
     category: "Primary Category",
     achievement: "3rd Position — Certificate of Excellence",
     prize: "₦200,000 Cash Prize + Award Plaque",
@@ -1102,14 +1102,14 @@ export const NEWS: NewsArticle[] = [
   },
   {
     slug: "over-2-7-million-naira-awarded-championship",
-    title: "Over ₦2.7 Million in Cash Prizes & Awards Presented at Nigerian STEM Championship",
+    title: "Over ₦2.7 Million in Cash Prizes & Awards Presented at Annual National Science Championship",
     excerpt:
       "Diamond Special Schools Owerri claims ₦1,000,000 top prize, while NTIC Abuja, Bright Sun College, and Preston Int'l School take home major honors.",
     category: "Championship Highlights",
     date: "July 2025",
     image: IMAGES.hero,
     content: [
-      "In a spectacular display of academic brilliance, the 2025 Nigerian STEM Championship Awards Ceremony honoured the country's finest young scientists with over ₦2.7 million in cash awards, laptops, and plaques.",
+      "In a spectacular display of academic brilliance, the 2025 Annual National Science Championship Awards Ceremony honoured the country's finest young scientists with over ₦2.7 million in cash awards, laptops, and plaques.",
       "Diamond Special Schools Owerri swept the Primary Category, receiving the grand ₦1,000,000 prize cheque. Bright Sun College Lagos claimed ₦500,000 in Senior Secondary, while NTIC Abuja Boys received ₦700,000 in Junior Secondary honors.",
       "Special Guest of Honour Chief Engr. Dr. Darlington Ugota commended the organizers for building an authentic, merit-driven platform that inspires young Africans to pursue science.",
     ],
@@ -1196,7 +1196,7 @@ export const GALLERY: GalleryItem[] = [
     title: "Prime STEM Leadership & Dignitaries",
     category: "Competitions",
     caption:
-      "Executives, corporate partners, school leaders, and guest dignitaries at the Nigerian STEM Championship awards.",
+      "Executives, corporate partners, school leaders, and guest dignitaries at the Annual National Science Championship awards.",
   },
   {
     image: "/images/awards/emmanuel-saviour-gospelland.jpg",
