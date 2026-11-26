@@ -8,7 +8,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const correctOption = String(body.correctOption || "A").toUpperCase();
+    const correctOption = String(body.correctOption || "").toUpperCase();
     if (!["A", "B", "C", "D"].includes(correctOption)) {
       return NextResponse.json(
         { error: "correctOption must be A, B, C, or D." },
