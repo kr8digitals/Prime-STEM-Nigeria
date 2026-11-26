@@ -3,6 +3,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { Pool } from "pg";
+import { primary56Paper } from "@/lib/primary-56-paper";
 import {
   generateCandidateAccessCode,
   hashExamCode,
@@ -38,7 +39,7 @@ export interface ExamQuestionRecord {
   optionB: string;
   optionC: string;
   optionD: string;
-  correctOption: AnswerChoice; // Server-protected! Never returned to candidates
+  correctOption: AnswerChoice | null; // Server-protected! Never returned to candidates
   points: number;
   explanation: string;
   createdAt: string;
@@ -216,6 +217,7 @@ export interface RawIntegrationSettings {
 }
 
 interface ExamSystemState {
+  primary56PaperImported?: boolean;
   examinations: ExaminationRecord[];
   questions: ExamQuestionRecord[];
   schedules: ExamScheduleRecord[];
@@ -870,6 +872,34 @@ function createInitialSeedState(): ExamSystemState {
   };
 }
 
+// Add the supplied paper once without replacing existing exams, candidates, or edits.
+// The published listing has no invented schedule, and access is blocked until
+// all answers have been reviewed by an administrator.
+function installPrimary56Paper(state: ExamSystemState): ExamSystemState {
+  if (state.primary56PaperImported) return state;
+  const examId = "b74ac582-b9f7-44f8-a615-880928a20260";
+  const now = new Date().toISOString();
+  if (!state.examinations.some((exam) => exam.id === examId)) {
+    state.examinations.push({
+      id: examId, slug: "skc-preliminary-primary-5-6-nov-2026",
+      title: "STEM Kids Championship — Preliminary Round, Primary 5 and 6",
+      competitionLabel: "5th Edition STEM Kids Championship (SKC)",
+      programSlug: "stem-kids-championship", category: "Primary 5–6",
+      description: "Preliminary round paper dated November 21, 2026. Awaiting verified answer key and a scheduled examination window.",
+      instructions: "Answer all 50 questions. Choose one option per question. Each question carries two marks. Cheating leads to disqualification.",
+      durationMinutes: 60, passMarkPercent: 50, status: "published",
+      resultsPublished: false, proctoringRequired: true, createdAt: now, updatedAt: now,
+    });
+    primary56Paper.forEach(([prompt, optionA, optionB, optionC, optionD], index) => {
+      state.questions.push({ id: `b74ac582-b9f7-44f8-a615-${String(index + 1).padStart(12, "0")}`,
+        examId, prompt, optionA, optionB, optionC, optionD, correctOption: null,
+        points: 2, explanation: "", createdAt: now, updatedAt: now });
+    });
+  }
+  state.primary56PaperImported = true;
+  return state;
+}
+
 // =============================================================
 // DUAL-MODE PERSISTENCE (POSTGRESQL + LOCAL TRANSACTIONAL JSON)
 // =============================================================
@@ -973,16 +1003,16 @@ async function loadExamState(): Promise<ExamSystemState> {
       if (res.rows.length > 0 && res.rows[0].payload) {
         const seed = createInitialSeedState();
         const remote = res.rows[0].payload as Partial<ExamSystemState>;
-        return {
+        return installPrimary56Paper({
           ...seed,
           ...remote,
           integrationSettings: {
             ...seed.integrationSettings,
             ...(remote.integrationSettings || {}),
           },
-        };
+        });
       }
-      const initial = readLocalState();
+      const initial = installPrimary56Paper(readLocalState());
       await pool.query(
         `INSERT INTO public.site_content_store (key, payload, updated_at)
          VALUES ($1, $2::jsonb, NOW())
@@ -994,7 +1024,7 @@ async function loadExamState(): Promise<ExamSystemState> {
       console.warn("[exam-store] PG read fallback to local:", err);
     }
   }
-  return readLocalState();
+  return installPrimary56Paper(readLocalState());
 }
 
 async function saveExamState(state: ExamSystemState): Promise<void> {
@@ -1496,6 +1526,10 @@ export async function validateCandidateAccessAndCreateAttempt(input: {
         code: "NO_QUESTIONS",
         error: "Questions have not yet been published for this examination.",
       };
+    }
+
+    if (examQuestions.some((question) => !question.correctOption)) {
+      return { ok: false, code: "ANSWER_KEY_PENDING", error: "This examination is not ready yet. Its answer key is awaiting administrator review." };
     }
 
     const schedule = state.schedules.find(

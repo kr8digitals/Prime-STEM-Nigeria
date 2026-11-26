@@ -334,6 +334,8 @@ export function RegisterForm() {
   const [pending, setPending] = useState(false);
   const [success, setSuccess] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [step, setStep] = useState(0);
+  const [review, setReview] = useState({ fullName: "", email: "", phone: "", category: "" });
   const [examSummary, setExamSummary] = useState<{
     examTitle: string;
     scheduleLabel: string;
@@ -359,6 +361,16 @@ export function RegisterForm() {
       })
       .catch(() => {});
   }, []);
+
+  // Links from programme pages carry a slug (or the legacy SKC/AOCT shorthand).
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("program");
+    if (!requested) return;
+    const aliases: Record<string, string> = { skc: "stem-kids-championship", aoct: "african-organic-chemistry-tournament" };
+    const slug = aliases[requested.toLowerCase()] || requested;
+    const programme = programs.find((p) => p.slug === slug);
+    if (programme) setSelectedProgramName(programme.name);
+  }, [programs]);
 
   // Match programme selection to linked online examinations
   const matchingExams = useMemo(() => {
@@ -388,8 +400,33 @@ export function RegisterForm() {
     [publicExams, selectedExamId]
   );
 
+  function advanceStep(form: HTMLFormElement) {
+    const values = Object.fromEntries(new FormData(form).entries());
+    const parsed = registerSchema.safeParse(values);
+    const relevant = step === 0 ? ["fullName", "email", "phone", "category"] : ["program"];
+    const nextErrors: FieldErrors = {};
+    if (!parsed.success) parsed.error.issues.forEach((issue) => {
+      const key = String(issue.path[0]);
+      if (relevant.includes(key)) nextErrors[key] = issue.message;
+    });
+    setErrors(nextErrors);
+    setServerError("");
+    if (Object.keys(nextErrors).length) return;
+    if (step === 1 && enrollOnlineExam && matchingExams.length > 0) {
+      if (!selectedScheduleId) { setServerError("Please select an available examination date and time slot."); return; }
+      if (!schoolName.trim()) { setServerError("Please enter the candidate's school or institution name."); return; }
+      if (!parentConsentGiven) { setServerError("Please confirm parent, guardian, or authorised school consent."); return; }
+    }
+    setReview({ fullName: String(values.fullName), email: String(values.email), phone: String(values.phone), category: String(values.category) });
+    setStep((current) => Math.min(2, current + 1));
+  }
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (step < 2) {
+      advanceStep(e.currentTarget);
+      return;
+    }
     setErrors({});
     setServerError("");
     const form = e.currentTarget;
@@ -479,6 +516,15 @@ export function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      <ol className="grid grid-cols-3 gap-2" aria-label="Registration progress">
+        {["Your details", "Programme & exam", "Review"].map ( (label, index) => (
+          <li key={label} aria-current={step === index ? "step" : undefined} className={`rounded-xl px-3 py-3 text-center text-xs font-bold ${step === index ? "bg-blue-700 text-white" : "bg-slate-100 text-slate-600"}`}>
+            <span className="block text-[10px] uppercase tracking-wide">Step {index + 1}</span>{label}
+          </li>
+        ))}
+      </ol>
+      <div hidden={step !== 0} className="space-y-5">
+
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label className={labelClasses} htmlFor="rg-name">
@@ -549,6 +595,8 @@ export function RegisterForm() {
           <FieldError message={errors.category} />
         </div>
       </div>
+      </div>
+      <div hidden={step !== 1} className="space-y-5">
       <div>
         <label className={labelClasses} htmlFor="rg-program">
           Competition / Programme *
@@ -706,6 +754,19 @@ export function RegisterForm() {
         </div>
       )}
 
+      </div>
+      <div hidden={step !== 2} className="space-y-5">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-700">
+          <h3 className="mb-3 font-extrabold text-[#172554]">Review your registration</h3>
+          <dl className="grid gap-2 sm:grid-cols-2">
+            <div><dt className="font-bold">Name</dt><dd>{review.fullName}</dd></div>
+            <div><dt className="font-bold">Email</dt><dd>{review.email}</dd></div>
+            <div><dt className="font-bold">Phone</dt><dd>{review.phone}</dd></div>
+            <div><dt className="font-bold">Registering as</dt><dd>{review.category}</dd></div>
+            <div><dt className="font-bold">Programme</dt><dd>{selectedProgramName}</dd></div>
+            {enrollOnlineExam && activeExam && <div><dt className="font-bold">Exam</dt><dd>{activeExam.title}</dd></div>}
+          </dl>
+        </div>
       <div>
         <label className={labelClasses} htmlFor="rg-message">
           Additional Notes or Payment Reference
@@ -719,15 +780,19 @@ export function RegisterForm() {
         />
       </div>
 
+      </div>
       {serverError && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-600">
           {serverError}
         </div>
       )}
 
-      <SubmitButton pending={pending} icon={<UserPlus className="h-5 w-5" />}>
-        {pending ? "Submitting Registration…" : "Complete Registration"}
-      </SubmitButton>
+      <div className="flex gap-3">
+        {step > 0 && <button type="button" onClick={() => { setStep(step - 1); setServerError(""); }} className="rounded-full border border-slate-300 px-6 py-3 font-bold text-slate-700">Back</button>}
+        {step < 2 ? <button type="button" onClick={(event) => advanceStep(event.currentTarget.form!)} className="w-full rounded-full bg-blue-700 px-6 py-4 font-bold text-white hover:bg-blue-800">Continue</button> : <SubmitButton pending={pending} icon={<UserPlus className="h-5 w-5" />}>
+          {pending ? "Submitting Registration…" : "Complete Registration"}
+        </SubmitButton>}
+      </div>
     </form>
   );
 }

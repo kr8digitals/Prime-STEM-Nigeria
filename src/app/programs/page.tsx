@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
+import Link from "next/link";
 import { useContent } from "@/context/content-context";
 import { FinalCTA, PageHero, UpcomingSection } from "@/components/sections";
 import {
@@ -29,6 +30,29 @@ export default function ProgramsPage() {
         description="Programs are specific initiatives people participate in — competitions, boot camps, technology projects and events that build skills, confidence and recognition."
         image={programs[0]?.image || "/images/awards/championship-2025-winners-stage.jpg"}
       />
+
+      <section className="bg-slate-50 py-16 sm:py-20" aria-label="Explore our programmes">
+        <Container>
+          <SectionHeading eyebrow="Explore our programmes" title="Find your next opportunity" description="Discover competitions, learning and events for schools and learners." />
+          <div id="discover-programmes" className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {programs.map((program) => (
+              <Link key={program.slug} href={`/programs/${program.slug}`} className="group flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+                <div className="relative aspect-[16/9] overflow-hidden bg-slate-800">
+                  <img src={program.image} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/10 to-transparent" />
+                  <span className="absolute left-4 top-4 rounded-full bg-cyan-300 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-slate-950">{program.category}</span>
+                  <h2 className="absolute bottom-4 left-5 right-5 text-xl font-extrabold text-white">{program.name}</h2>
+                </div>
+                <div className="flex flex-1 flex-col p-5">
+                  <p className="text-sm leading-relaxed text-slate-600">{program.tagline}</p>
+                  <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold text-slate-600"><span className="rounded-full bg-slate-100 px-3 py-1">{program.date}</span><span className="rounded-full bg-slate-100 px-3 py-1">{program.format}</span></div>
+                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-blue-700">Explore programme <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </Container>
+      </section>
 
       <section className="bg-white py-20 sm:py-28">
         <Container>
@@ -86,8 +110,8 @@ export default function ProgramsPage() {
                     </div>
 
                     <div className="mt-8 flex flex-wrap gap-4">
-                      <ButtonLink href="/register" variant="primary">
-                        Register Now ({content.earlyBirdOffer?.feePerCandidate || "₦4k"}) <ArrowRight className="h-4 w-4" />
+                      <ButtonLink href={`/register?program=${encodeURIComponent(program.slug)}`} variant="primary">
+                        Register Now <ArrowRight className="h-4 w-4" />
                       </ButtonLink>
                       <ButtonLink href={`/programs/${program.slug}`} variant="outline">
                         View Full Details

@@ -990,7 +990,7 @@ export default function ExamManagementPanel({ showToast }: AdminExamPanelProps) 
                 Multiple-Choice Question Bank (Single Correct Option A–D)
               </h2>
               <p className="text-xs text-slate-400">
-                Question sequence is cryptographically shuffled per candidate attempt using permanent Question UUIDs. Options A, B, C, and D are NEVER shuffled, and answer keys never leave the server.
+                Question sequence is shuffled per candidate. Options A–D remain in their original order. Imported questions with a pending answer require review before candidates can access that exam.
               </p>
             </div>
             <button
@@ -1032,8 +1032,7 @@ export default function ExamManagementPanel({ showToast }: AdminExamPanelProps) 
                           #{idx + 1} &bull; {ex?.title || "Exam"}
                         </span>
                         <span className="rounded bg-emerald-500/20 px-2 py-0.5 font-extrabold text-emerald-300">
-                          Correct Answer: Option {q.correctOption} ({q.points}{" "}
-                          pts)
+                          {q.correctOption ? `Correct Answer: Option ${q.correctOption}` : "Answer key pending review"} ({q.points} pts)
                         </span>
                         <span className="font-mono text-slate-500">
                           UUID: {q.id.slice(0, 12)}…
@@ -2475,9 +2474,11 @@ export default function ExamManagementPanel({ showToast }: AdminExamPanelProps) 
                 </label>
                 <select
                   name="correctOption"
-                  defaultValue={questionModal.correctOption || "A"}
+                  defaultValue={questionModal.correctOption || ""}
+                  required
                   className="w-full rounded-xl border border-emerald-400/40 bg-[#0B132B] px-3 py-2 font-bold text-emerald-300"
                 >
+                  <option value="" disabled>Select and verify an answer</option>
                   <option value="A">Option A</option>
                   <option value="B">Option B</option>
                   <option value="C">Option C</option>

@@ -24,6 +24,7 @@ import {
   Layers,
   Lock,
   LogOut,
+  Menu,
   Mail,
   MapPin,
   MessageSquare,
@@ -58,6 +59,8 @@ export default function AdminPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+
+  const [navOpen, setNavOpen] = useState(false);
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<
@@ -368,6 +371,7 @@ export default function AdminPage() {
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0B132B]/95 backdrop-blur-xl px-5 py-3.5">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <div className="flex items-center gap-3">
+            <button type="button" onClick={() => setNavOpen(!navOpen)} aria-label="Toggle dashboard navigation" aria-expanded={navOpen} className="rounded-lg p-2 hover:bg-white/10 lg:hidden"><Menu className="h-5 w-5" /></button>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white p-1 shadow">
               <img
                 src="/images/logo-tight.png"
@@ -385,7 +389,7 @@ export default function AdminPage() {
                 </span>
               </div>
               <p className="text-[0.65rem] text-slate-400">
-                Connected to All 25 Pages • Real-Time Database Sync
+                Manage programmes, registrations and examinations
               </p>
             </div>
           </div>
@@ -416,8 +420,12 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Navigation Tabs Bar */}
-        <div className="mx-auto max-w-7xl mt-3 flex items-center gap-1 overflow-x-auto pb-1 text-xs font-bold scrollbar-none">
+      </header>
+      <div className="mx-auto flex w-full max-w-[1500px] flex-1 gap-0 lg:gap-6 lg:px-6">
+        {navOpen && <button type="button" aria-label="Close navigation" className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={() => setNavOpen(false)} />}
+        <aside className={`fixed inset-y-0 left-0 z-40 w-72 overflow-y-auto border-r border-white/10 bg-[#0B132B] px-3 pb-8 pt-20 transition-transform lg:sticky lg:top-[73px] lg:z-0 lg:h-[calc(100vh-73px)] lg:translate-x-0 lg:rounded-2xl lg:border-0 lg:pt-5 ${navOpen ? "translate-x-0" : "-translate-x-full"}`}>
+          <p className="px-3 pb-3 text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Dashboard navigation</p>
+          <nav aria-label="Admin navigation" className="space-y-1 text-xs font-bold">
           {[
             { id: "overview", label: "Command Center", icon: Layers },
             { id: "examinations", label: "Examinations & AI Proctoring", icon: ShieldCheck },
@@ -434,20 +442,19 @@ export default function AdminPage() {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3.5 py-2 transition-all duration-200 ${
+              onClick={() => { setActiveTab(tab.id as any); setNavOpen(false); }}
+              className={`flex w-full items-center gap-2 rounded-xl px-3.5 py-3 text-left transition-all duration-200 ${
                 activeTab === tab.id
                   ? "bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white shadow-md font-black"
-                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                  : "text-slate-300 hover:bg-white/5 hover:text-white"
               }`}
             >
               <tab.icon className="h-3.5 w-3.5" />
               {tab.label}
             </button>
           ))}
-        </div>
-      </header>
-
+          </nav>
+        </aside>
       {/* Main Admin Content Body */}
       <main className="flex-1 p-5 sm:p-8 max-w-7xl mx-auto w-full">
         {/* =========================================================
@@ -2222,6 +2229,7 @@ export default function AdminPage() {
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }
