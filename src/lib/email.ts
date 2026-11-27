@@ -406,7 +406,7 @@ export async function sendExamSubmissionReceiptEmail(params: {
         <div style="font-size:30px;font-weight:800;color:#065F46;margin:4px 0;">${attempt.score ?? 0} / ${attempt.maxScore ?? 0} (${attempt.percentage ?? 0}%)</div>
       </div>`
     : `<p style="background:#F8FAFC;border:1px solid #E2E8F0;padding:14px 16px;border-radius:10px;font-size:14px;">
-        Your responses have been marked and securely stored. Official scores will become visible once released by the Prime STEM Examination Board after proctoring verification.
+        Your responses have been submitted. Official scores will become visible once marked and released by the Prime STEM Examination Board after proctoring verification.
       </p>`;
 
   const htmlBody = wrapPrimeStemEmailTemplate({

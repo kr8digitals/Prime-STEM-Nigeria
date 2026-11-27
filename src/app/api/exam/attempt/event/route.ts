@@ -75,7 +75,7 @@ export async function POST(request: Request) {
               <p><strong>Candidate:</strong> ${fullPayload.candidate.fullName} (${fullPayload.candidate.email})</p>
               <p><strong>School:</strong> ${fullPayload.candidate.schoolName}</p>
               <p><strong>Examination:</strong> ${fullPayload.exam.title}</p>
-              <p><strong>Auto-Calculated Score:</strong> ${fullPayload.attempt.score ?? 0} / ${fullPayload.attempt.maxScore ?? 0} (${fullPayload.attempt.percentage ?? 0}%)</p>
+              <p>Results remain held pending answer-key verification and administrator release.</p>
               <p><strong>Reason:</strong> ${fullPayload.attempt.submissionReason}</p>
             `,
             relatedEntityId: fullPayload.attempt.id,

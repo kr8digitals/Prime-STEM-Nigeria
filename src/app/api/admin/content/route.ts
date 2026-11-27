@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const denied = requireAdminAuth(request);
   if (denied) return denied;
 
-  const content = getSiteContent();
+  const content = await getSiteContent();
   return NextResponse.json(content, {
     headers: { "Cache-Control": "no-store" },
   });
@@ -22,12 +22,12 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     if (body.action === "reset") {
-      const reset = resetSiteContent();
+      const reset = await resetSiteContent();
       return NextResponse.json({ success: true, content: reset });
     }
 
     const payload = body.content ? body.content : body;
-    const updated = saveSiteContent(payload);
+    const updated = await saveSiteContent(payload);
     return NextResponse.json({ success: true, content: updated });
   } catch (error: any) {
     console.error("Error saving content:", error);

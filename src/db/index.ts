@@ -24,19 +24,11 @@ if (databaseUrl && databaseUrl.trim().length > 0) {
     }
     realDb = drizzle(pool, { schema });
   } catch (e) {
-    console.warn("Postgres connection failed, falling back to local file storage:", e);
+    throw new Error("Unable to initialize PostgreSQL", { cause: e });
   }
 }
 
+// Never report a successful database operation when no database is configured.
 export const db: any = realDb || {
-  execute: async () => ({ rows: [{ ok: 1 }] }),
-  insert: () => ({
-    values: async () => ({ rowCount: 1 }),
-  }),
-  select: () => ({
-    from: () => ({
-      where: () => [],
-      limit: () => [],
-    }),
-  }),
+  execute: async () => { throw new Error("DATABASE_URL is not configured"); },
 };

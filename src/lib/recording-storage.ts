@@ -239,6 +239,7 @@ export async function storeProctoringBinary(params: {
         checksumSha256,
       };
     } catch (driveErr) {
+      if (IS_SERVERLESS) throw new Error("Recording upload to durable storage failed; retry is required.");
       console.warn(
         "[recording-storage] Google Drive upload failed, saving safely in local vault:",
         driveErr
@@ -246,7 +247,9 @@ export async function storeProctoringBinary(params: {
     }
   }
 
-  // Local / Repository Protected Vault (excluded from public web root & .gitignore)
+  if (IS_SERVERLESS) throw new Error("Durable recording storage is not configured; recording cannot be saved on this server.");
+
+  // Local development vault (excluded from public web root & .gitignore)
   const dir = ensureVaultDir(safeAttemptId);
   const fullPath = path.join(dir, fileName);
   fs.writeFileSync(fullPath, params.buffer);

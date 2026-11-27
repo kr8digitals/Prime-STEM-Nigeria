@@ -217,6 +217,7 @@ export interface RawIntegrationSettings {
 }
 
 interface ExamSystemState {
+  questionImportDigests?: Record<string, boolean>;
   primary56PaperImported?: boolean;
   examinations: ExaminationRecord[];
   questions: ExamQuestionRecord[];
@@ -931,9 +932,7 @@ function getPgPool(): Pool | null {
     });
     return globalStore.__psnPgPool;
   } catch (err) {
-    console.warn("[exam-store] PG Pool init failed:", err);
-    globalStore.__psnPgPool = null;
-    return null;
+    throw new Error(`Database configuration failed: ${err instanceof Error ? err.message : "unknown error"}`);
   }
 }
 
@@ -991,78 +990,47 @@ function writeLocalState(state: ExamSystemState): void {
   }
 }
 
+function mergeExamState(remote: Partial<ExamSystemState>): ExamSystemState {
+  const seed = createInitialSeedState();
+  return installPrimary56Paper({ ...seed, ...remote, integrationSettings: { ...seed.integrationSettings, ...(remote.integrationSettings || {}) } });
+}
+
 async function loadExamState(): Promise<ExamSystemState> {
   const pool = getPgPool();
-  if (pool) {
-    try {
-      await ensurePgKvTable(pool);
-      const res = await pool.query(
-        "SELECT payload FROM public.site_content_store WHERE key = $1 LIMIT 1",
-        ["exam_system_v2"]
-      );
-      if (res.rows.length > 0 && res.rows[0].payload) {
-        const seed = createInitialSeedState();
-        const remote = res.rows[0].payload as Partial<ExamSystemState>;
-        return installPrimary56Paper({
-          ...seed,
-          ...remote,
-          integrationSettings: {
-            ...seed.integrationSettings,
-            ...(remote.integrationSettings || {}),
-          },
-        });
-      }
-      const initial = installPrimary56Paper(readLocalState());
-      await pool.query(
-        `INSERT INTO public.site_content_store (key, payload, updated_at)
-         VALUES ($1, $2::jsonb, NOW())
-         ON CONFLICT (key) DO NOTHING`,
-        ["exam_system_v2", JSON.stringify(initial)]
-      );
-      return initial;
-    } catch (err) {
-      console.warn("[exam-store] PG read fallback to local:", err);
-    }
-  }
-  return installPrimary56Paper(readLocalState());
+  if (!pool) return installPrimary56Paper(readLocalState());
+  await ensurePgKvTable(pool);
+  const initial = installPrimary56Paper(createInitialSeedState());
+  await pool.query(`INSERT INTO public.site_content_store (key, payload, updated_at) VALUES ($1, $2::jsonb, NOW()) ON CONFLICT (key) DO NOTHING`, ["exam_system_v2", JSON.stringify(initial)]);
+  const res = await pool.query("SELECT payload FROM public.site_content_store WHERE key = $1", ["exam_system_v2"]);
+  return mergeExamState(res.rows[0].payload);
 }
 
-async function saveExamState(state: ExamSystemState): Promise<void> {
+// PostgreSQL serializes writes across all application instances. The single JSON
+// document is still a throughput bottleneck, not a 250-candidate architecture.
+async function withExamTransaction<T>(fn: (state: ExamSystemState) => Promise<T> | T): Promise<T> {
   const pool = getPgPool();
   if (pool) {
+    await ensurePgKvTable(pool);
+    const client = await pool.connect();
     try {
-      await ensurePgKvTable(pool);
-      await pool.query(
-        `INSERT INTO public.site_content_store (key, payload, updated_at)
-         VALUES ($1, $2::jsonb, NOW())
-         ON CONFLICT (key) DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()`,
-        ["exam_system_v2", JSON.stringify(state)]
-      );
-      return;
-    } catch (err) {
-      console.warn("[exam-store] PG write fallback to local:", err);
-    }
+      await client.query("BEGIN");
+      const initial = installPrimary56Paper(createInitialSeedState());
+      await client.query(`INSERT INTO public.site_content_store (key, payload, updated_at) VALUES ($1, $2::jsonb, NOW()) ON CONFLICT (key) DO NOTHING`, ["exam_system_v2", JSON.stringify(initial)]);
+      const res = await client.query("SELECT payload FROM public.site_content_store WHERE key = $1 FOR UPDATE", ["exam_system_v2"]);
+      const state = mergeExamState(res.rows[0].payload);
+      const result = await fn(state);
+      await client.query("UPDATE public.site_content_store SET payload = $2::jsonb, updated_at = NOW() WHERE key = $1", ["exam_system_v2", JSON.stringify(state)]);
+      await client.query("COMMIT");
+      return result;
+    } catch (error) { await client.query("ROLLBACK"); throw error; }
+    finally { client.release(); }
   }
-  writeLocalState(state);
-}
-
-async function withExamTransaction<T>(
-  fn: (state: ExamSystemState) => Promise<T> | T
-): Promise<T> {
   const prev = globalStore.__psnExamMutex || Promise.resolve();
   let release!: () => void;
-  globalStore.__psnExamMutex = new Promise<void>((resolve) => {
-    release = resolve;
-  });
+  globalStore.__psnExamMutex = new Promise<void>(resolve => { release = resolve; });
   await prev;
-  try {
-    const state = await loadExamState();
-    const out = await fn(state);
-    await saveExamState(state);
-    return out;
-  } finally {
-    release();
-  }
+  try { const state = installPrimary56Paper(readLocalState()); const result = await fn(state); writeLocalState(state); return result; }
+  finally { release(); }
 }
 
 function buildCodeHint(plainCode: string): string {
@@ -1362,64 +1330,43 @@ function projectSafeQuestionsForAttempt(
   return out;
 }
 
+function scoreAttempt(state: ExamSystemState, attempt: ExamAttemptRecord): boolean {
+  const questions = new Map(state.questions.filter(q => q.examId === attempt.examId).map(q => [q.id, q]));
+  const ids = [...new Set(attempt.shuffledQuestionIds)];
+  if (!ids.length || ids.some(id => !questions.get(id)?.correctOption)) {
+    attempt.score = null; attempt.maxScore = null; attempt.percentage = null;
+    return false;
+  }
+  const answers = new Map(state.answers.filter(a => a.attemptId === attempt.id).map(a => [a.questionId, a.selectedOption]));
+  let score = 0, maxScore = 0;
+  for (const id of ids) {
+    const q = questions.get(id)!;
+    const points = Math.max(1, Number(q.points) || 1);
+    maxScore += points;
+    if (answers.get(id) && answers.get(id) === q.correctOption) score += points;
+  }
+  attempt.score = score; attempt.maxScore = maxScore;
+  attempt.percentage = Math.round(score / maxScore * 100);
+  return true;
+}
+
 function finalizeAttemptMarkingInternal(
-  state: ExamSystemState,
-  attempt: ExamAttemptRecord,
-  exam: ExaminationRecord,
-  finalStatus:
-    | "submitted"
-    | "auto_submitted_violation"
-    | "auto_submitted_timeout",
-  reason: string
+  state: ExamSystemState, attempt: ExamAttemptRecord, exam: ExaminationRecord,
+  finalStatus: "submitted" | "auto_submitted_violation" | "auto_submitted_timeout", reason: string
 ): void {
-  if (
-    attempt.status === "submitted" ||
-    attempt.status === "auto_submitted_violation" ||
-    attempt.status === "auto_submitted_timeout"
-  ) {
-    return;
+  if (["submitted", "auto_submitted_violation", "auto_submitted_timeout"].includes(attempt.status)) return;
+  scoreAttempt(state, attempt);
+  const now = new Date().toISOString();
+  attempt.status = finalStatus; attempt.submittedAt = now;
+  attempt.submissionReason = reason; attempt.updatedAt = now;
+}
+
+function prepareExamResults(state: ExamSystemState, examId: string): void {
+  const questions = state.questions.filter(q => q.examId === examId);
+  if (!questions.length || questions.some(q => !q.correctOption)) throw new Error("Enter and verify an answer for every question before releasing results.");
+  for (const attempt of state.attempts.filter(a => a.examId === examId && ["submitted", "auto_submitted_violation", "auto_submitted_timeout"].includes(a.status))) {
+    if (!scoreAttempt(state, attempt)) throw new Error("A submitted attempt has missing questions or answer keys; results cannot be released.");
   }
-
-  // Mark strictly by permanent Question UUID against original server-only correctOption
-  const questionMap = new Map<string, ExamQuestionRecord>();
-  for (const q of state.questions) {
-    if (q.examId === exam.id) questionMap.set(q.id, q);
-  }
-
-  const answerMap = new Map<string, ExamAnswerRecord>();
-  for (const ans of state.answers) {
-    if (ans.attemptId === attempt.id) answerMap.set(ans.questionId, ans);
-  }
-
-  let score = 0;
-  let maxScore = 0;
-  const seen = new Set<string>();
-
-  for (const permanentQuestionId of attempt.shuffledQuestionIds) {
-    if (seen.has(permanentQuestionId)) continue;
-    const q = questionMap.get(permanentQuestionId);
-    if (!q) continue;
-    seen.add(permanentQuestionId);
-
-    const pts = Math.max(1, Number(q.points) || 1);
-    maxScore += pts;
-
-    const given = answerMap.get(permanentQuestionId);
-    if (given && given.selectedOption === q.correctOption) {
-      score += pts;
-    }
-  }
-
-  const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
-  const nowIso = new Date().toISOString();
-
-  attempt.status = finalStatus;
-  attempt.submittedAt = nowIso;
-  attempt.submissionReason = reason;
-  attempt.score = score;
-  attempt.maxScore = maxScore;
-  attempt.percentage = percentage;
-  attempt.updatedAt = nowIso;
 }
 
 function sanitizeAttemptForStudent(
@@ -1526,10 +1473,6 @@ export async function validateCandidateAccessAndCreateAttempt(input: {
         code: "NO_QUESTIONS",
         error: "Questions have not yet been published for this examination.",
       };
-    }
-
-    if (examQuestions.some((question) => !question.correctOption)) {
-      return { ok: false, code: "ANSWER_KEY_PENDING", error: "This examination is not ready yet. Its answer key is awaiting administrator review." };
     }
 
     const schedule = state.schedules.find(
@@ -2372,6 +2315,7 @@ export async function upsertExamination(input: {
     if (input.id) {
       const idx = state.examinations.findIndex((e) => e.id === input.id);
       if (idx === -1) throw new Error("Examination not found.");
+      if (input.resultsPublished && !state.examinations[idx].resultsPublished) prepareExamResults(state, input.id);
       const updated: ExaminationRecord = {
         ...state.examinations[idx],
         ...input,
@@ -2383,6 +2327,7 @@ export async function upsertExamination(input: {
       return updated;
     }
 
+    if (input.resultsPublished) throw new Error("Create the examination and verify its answers before releasing results.");
     const baseSlug =
       (input.slug || input.title)
         .toLowerCase()
@@ -2424,6 +2369,7 @@ export async function setExamResultsPublished(input: {
   return withExamTransaction((state) => {
     const exam = state.examinations.find((e) => e.id === input.examId);
     if (!exam) throw new Error("Examination not found.");
+    if (input.published) prepareExamResults(state, exam.id);
     exam.resultsPublished = input.published;
     exam.updatedAt = new Date().toISOString();
     return { ...exam };
@@ -2438,6 +2384,10 @@ export async function setAttemptResultRelease(input: {
   return withExamTransaction((state) => {
     const attempt = state.attempts.find((a) => a.id === input.attemptId);
     if (!attempt) throw new Error("Attempt not found.");
+    if (input.released) {
+      if (!["submitted", "auto_submitted_violation", "auto_submitted_timeout"].includes(attempt.status)) throw new Error("The attempt has not been submitted.");
+      if (!scoreAttempt(state, attempt)) throw new Error("Enter and verify every answer before releasing this result.");
+    }
     attempt.resultReleased = input.released;
     if (input.adminReviewNotes !== undefined) {
       attempt.adminReviewNotes = input.adminReviewNotes;
@@ -2459,6 +2409,34 @@ export async function deleteExamination(id: string): Promise<boolean> {
   });
 }
 
+export async function updateQuestionAnswers(examId: string, items: { id: string; answer: AnswerChoice }[]): Promise<number> {
+  return withExamTransaction(state => {
+    const exam = state.examinations.find(e => e.id === examId);
+    if (!exam) throw new Error("Exam not found.");
+    if (exam.resultsPublished || state.attempts.some(a => a.examId === examId && a.resultReleased)) throw new Error("Unpublish released results before changing answers.");
+    const questions = new Map(state.questions.filter(q => q.examId === examId).map(q => [q.id, q]));
+    if (items.some(item => !questions.has(item.id))) throw new Error("A question ID does not belong to this examination. Nothing was changed.");
+    const now = new Date().toISOString();
+    for (const item of items) { const q = questions.get(item.id)!; q.correctOption = item.answer; q.updatedAt = now; }
+    return items.length;
+  });
+}
+
+export async function importQuestions(examId: string, questions: import("@/lib/question-import").ImportedQuestion[], digest: string): Promise<number> {
+  return withExamTransaction((state) => {
+    if (!state.examinations.some(e => e.id === examId)) throw new Error("Exam not found.");
+    if (state.attempts.some(a => a.examId === examId)) throw new Error("Cannot add questions after candidates have started an attempt.");
+    if (state.examinations.find(e => e.id === examId)?.resultsPublished) throw new Error("Unpublish results before adding questions.");
+    const imports = (state.questionImportDigests ||= {});
+    const key = `${examId}:${digest}`;
+    if (imports[key]) throw new Error("This exact file has already been imported into this examination.");
+    const now = new Date().toISOString();
+    for (const item of questions) state.questions.push({ ...item, id: crypto.randomUUID(), examId, explanation: "", createdAt: now, updatedAt: now });
+    imports[key] = true;
+    return questions.length;
+  });
+}
+
 export async function upsertQuestion(input: {
   id?: string;
   examId: string;
@@ -2476,6 +2454,10 @@ export async function upsertQuestion(input: {
     if (input.id) {
       const idx = state.questions.findIndex((q) => q.id === input.id);
       if (idx === -1) throw new Error("Question not found.");
+      const original = state.questions[idx];
+      const hasAttempts = state.attempts.some(a => a.examId === original.examId);
+      if (state.examinations.some(e => e.id === original.examId && e.resultsPublished) || state.attempts.some(a => a.examId === original.examId && a.resultReleased)) throw new Error("Unpublish released results before editing the answer key.");
+      if (hasAttempts && (input.examId !== original.examId || input.prompt !== original.prompt || input.optionA !== original.optionA || input.optionB !== original.optionB || input.optionC !== original.optionC || input.optionD !== original.optionD || input.points !== original.points)) throw new Error("Questions and options cannot be changed after attempts begin; only answers can be updated.");
       const updated: ExamQuestionRecord = {
         ...state.questions[idx],
         ...input,
@@ -2486,6 +2468,9 @@ export async function upsertQuestion(input: {
       return updated;
     }
 
+    if (!state.examinations.some(e => e.id === input.examId)) throw new Error("Exam not found.");
+    if (state.examinations.some(e => e.id === input.examId && e.resultsPublished)) throw new Error("Unpublish results before adding questions.");
+    if (state.attempts.some(a => a.examId === input.examId)) throw new Error("Cannot add questions after attempts begin.");
     const created: ExamQuestionRecord = {
       id: crypto.randomUUID(),
       examId: input.examId,
@@ -2507,6 +2492,8 @@ export async function upsertQuestion(input: {
 
 export async function deleteQuestion(id: string): Promise<boolean> {
   return withExamTransaction((state) => {
+    const question = state.questions.find(q => q.id === id);
+    if (question && state.attempts.some(a => a.examId === question.examId)) throw new Error("Cannot delete questions after attempts begin.");
     const before = state.questions.length;
     state.questions = state.questions.filter((q) => q.id !== id);
     return state.questions.length < before;

@@ -86,6 +86,14 @@ export default function ExamManagementPanel({ showToast }: AdminExamPanelProps) 
   const [candidateSearch, setCandidateSearch] = useState("");
   const [candidateStatusFilter, setCandidateStatusFilter] = useState("all");
 
+  const [importExamId, setImportExamId] = useState("");
+  const [importCsv, setImportCsv] = useState("");
+  const [importPreview, setImportPreview] = useState<any[] | null>(null);
+  const [importError, setImportError] = useState("");
+  const [importBusy, setImportBusy] = useState(false);
+  const [answerCsv, setAnswerCsv] = useState("");
+  const [answerCount, setAnswerCount] = useState<number | null>(null);
+
   // Modals & Drawers
   const [examModal, setExamModal] = useState<any | null>(null);
   const [scheduleModal, setScheduleModal] = useState<any | null>(null);
@@ -322,6 +330,41 @@ export default function ExamManagementPanel({ showToast }: AdminExamPanelProps) 
       showToast("Schedule removed.");
       fetchSnapshot();
     }
+  };
+
+  const handleBulkImport = async (commit: boolean) => {
+    setImportError(""); setImportBusy(true);
+    try {
+      const res = await fetch("/api/admin/exams/questions/import", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ examId: importExamId, csv: importCsv, commit }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setImportError(data.error || "Import failed."); return; }
+      if (!commit) setImportPreview(data.questions);
+      else { showToast(`${data.count} questions imported.`); setImportPreview(null); setImportCsv(""); await fetchSnapshot(); }
+    } catch { setImportError("Could not reach the server. Check your connection and try again."); }
+    finally { setImportBusy(false); }
+  };
+
+  const downloadAnswerTemplate = () => {
+    const rows = (snapshot?.questions || []).filter(q => q.examId === importExamId);
+    if (!rows.length) { setImportError("There are no questions in this examination."); return; }
+    const cell = (value: string) => `"${String(value).replace(/^[=+@\-\t\r]/, "'$&").replace(/"/g, '""')}"`;
+    const csv = "question_id,question,answer\n" + rows.map(q => [cell(q.id), cell(q.prompt), cell(q.correctOption || "")].join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a"); link.href = url; link.download = "prime-stem-answer-key.csv"; link.click(); URL.revokeObjectURL(url);
+  };
+  const handleAnswerImport = async (commit: boolean) => {
+    setImportError(""); setImportBusy(true);
+    try {
+      const res = await fetch("/api/admin/exams/questions/answers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ examId: importExamId, csv: answerCsv, commit }) });
+      const data = await res.json();
+      if (!res.ok) { setImportError(data.error || "Answer import failed."); return; }
+      if (commit) { showToast(`${data.count} answers saved.`); setAnswerCsv(""); setAnswerCount(null); await fetchSnapshot(); }
+      else setAnswerCount(data.count);
+    } catch { setImportError("Could not reach the server."); }
+    finally { setImportBusy(false); }
   };
 
   const handleSaveQuestion = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -1016,6 +1059,34 @@ export default function ExamManagementPanel({ showToast }: AdminExamPanelProps) 
               <Plus className="h-4 w-4" /> Add MCQ Question
             </button>
           </div>
+
+          <section className="space-y-4 rounded-2xl border border-cyan-400/20 bg-white/5 p-5" aria-label="Bulk import questions">
+            <div><h3 className="font-extrabold text-white">Bulk import from a spreadsheet</h3>
+              <p className="mt-1 text-xs leading-relaxed text-slate-300">Download the template, enter one question per row in Excel or Google Sheets, and save as CSV UTF-8. Answer can be blank and entered later. Review the preview before importing. Questions are shuffled by ID; options stay in A–D order.</p></div>
+            <a className="inline-flex text-sm font-bold text-cyan-300 underline" download="prime-stem-questions-template.csv" href={'data:text/csv;charset=utf-8,' + encodeURIComponent('question,option_a,option_b,option_c,option_d,answer,points\n"What is 2 + 2?",2,3,4,5,C,2\n')}>Download CSV template</a>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="text-xs font-bold text-slate-300">Target examination
+                <select value={importExamId} onChange={e => { setImportExamId(e.target.value); setImportPreview(null); setAnswerCsv(""); setAnswerCount(null); }} className="mt-1 w-full rounded-xl border border-white/15 bg-[#0B132B] p-3 text-white"><option value="">Choose an examination</option>{exams.map(e => <option key={e.id} value={e.id}>{e.title}</option>)}</select>
+              </label>
+              <label className="text-xs font-bold text-slate-300">CSV file (up to 1 MB, 500 questions)
+                <input type="file" accept=".csv,text/csv" className="mt-1 block w-full rounded-xl border border-white/15 p-2 text-slate-200" onChange={async e => { const file = e.target.files?.[0]; setImportPreview(null); setImportError(""); if (!file) { setImportCsv(""); return; } if (file.size > 1048576) { setImportCsv(""); setImportError("File must be 1 MB or smaller."); return; } setImportCsv(await file.text()); }} />
+              </label>
+            </div>
+            <button type="button" disabled={!importExamId || !importCsv || importBusy} onClick={() => handleBulkImport(false)} className="rounded-xl bg-cyan-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">Preview questions</button>
+            <div className="border-t border-white/10 pt-4 space-y-3">
+              <h4 className="text-sm font-bold text-white">Set answers in bulk later</h4>
+              <p className="text-xs text-slate-300">Choose the exam above, download its answer-key file, fill in A–D for every row, then upload and review. Question IDs keep answers matched even when question order is shuffled.</p>
+              <button type="button" disabled={!importExamId} onClick={downloadAnswerTemplate} className="text-sm font-bold text-cyan-300 underline disabled:opacity-50">Download answer-key CSV</button>
+              <input type="file" aria-label="Answer-key CSV file" accept=".csv,text/csv" className="block w-full text-xs text-slate-200" onChange={async e => { const file = e.target.files?.[0]; setAnswerCount(null); setImportError(""); if (!file) { setAnswerCsv(""); return; } if (file.size > 1048576) { setAnswerCsv(""); setImportError("File must be 1 MB or smaller."); return; } setAnswerCsv(await file.text()); }} />
+              <button type="button" disabled={!importExamId || !answerCsv || importBusy} onClick={() => handleAnswerImport(false)} className="rounded-xl bg-white/10 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">Check answer file</button>
+              {answerCount !== null && <div className="flex flex-wrap items-center gap-3"><span className="text-sm text-cyan-300">{answerCount} answers validated for this examination.</span><button type="button" disabled={importBusy} onClick={() => handleAnswerImport(true)} className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-slate-950">Save answers</button></div>}
+            </div>
+            {importError && <p role="alert" className="text-sm font-semibold text-red-300">{importError}</p>}
+            {importPreview && <div className="space-y-3"><p className="text-sm font-bold text-cyan-300">{importPreview.length} questions ready • {importPreview.filter(q => !q.correctOption).length} answers to set later</p>
+              <div className="max-h-96 space-y-2 overflow-y-auto">{importPreview.map((q, i) => <div key={i} className="rounded-xl bg-black/30 p-3 text-xs text-slate-200"><p className="font-bold">{i + 1}. {q.prompt}</p><p className="mt-1">A. {q.optionA} · B. {q.optionB} · C. {q.optionC} · D. {q.optionD}</p><p className="mt-1 text-cyan-300">Answer: {q.correctOption || "Not set"} · {q.points} points</p></div>)}</div>
+              <button type="button" disabled={importBusy} onClick={() => handleBulkImport(true)} className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-slate-950 disabled:opacity-50">Import all {importPreview.length} questions</button>
+            </div>}
+          </section>
 
           <div className="space-y-3">
             {filteredQuestions.map((q, idx) => {
