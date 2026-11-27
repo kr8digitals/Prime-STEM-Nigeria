@@ -2,15 +2,15 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import * as defaultData from "@/data/content";
+import { pool } from "@/db";
 
 // The repository ships seed JSON in ./data. On Vercel (and most serverless hosts)
-// the deployment filesystem is read-only, so runtime writes go to a temp directory
-// instead. Both locations are read on startup, newest-wins.
+// local changes are stored separately. Serverless mutations require PostgreSQL.
 const SEED_DIR = path.join(process.cwd(), "data");
 const IS_SERVERLESS = Boolean(process.env.VERCEL);
 const RUNTIME_DIR = IS_SERVERLESS
   ? path.join(os.tmpdir(), "prime-stem-data")
-  : SEED_DIR;
+  : path.join(SEED_DIR, "runtime");
 
 const CONTENT_FILENAME = "site-content.json";
 const SUBMISSIONS_FILENAME = "submissions.json";
@@ -42,18 +42,12 @@ function readJson(filename: string): any | null {
   return null;
 }
 
-function writeJson(filename: string, value: unknown): boolean {
+function writeJson(filename: string, value: unknown): void {
   ensureDir();
-  for (const dir of readDirs()) {
-    try {
-      fs.writeFileSync(path.join(dir, filename), JSON.stringify(value, null, 2), "utf-8");
-      return true;
-    } catch (err) {
-      // Read-only filesystem (e.g. a deployment without a database) — try the next location.
-      console.warn(`[content-store] Could not write ${filename} to ${dir}:`, err);
-    }
-  }
-  return false;
+  const target = path.join(RUNTIME_DIR, filename);
+  const temp = `${target}.${process.pid}.${Date.now()}.tmp`;
+  fs.writeFileSync(temp, JSON.stringify(value, null, 2), "utf-8");
+  fs.renameSync(temp, target);
 }
 
 export function getDefaultContent() {
@@ -81,117 +75,100 @@ export function getDefaultContent() {
   };
 }
 
-export function getSiteContent() {
-  const def = getDefaultContent();
-  const parsed = readJson(CONTENT_FILENAME);
+type Submissions = { registrations: any[]; contactMessages: any[] };
+const blankSubmissions = (): Submissions => ({ registrations: [], contactMessages: [] });
 
-  if (!parsed) {
-    writeJson(CONTENT_FILENAME, def);
-    return def;
+function seedDocument(filename: string): any {
+  const file = path.join(SEED_DIR, filename);
+  if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, "utf8"));
+  return filename === CONTENT_FILENAME ? getDefaultContent() : blankSubmissions();
+}
+
+async function readDocument(filename: string, key: string): Promise<any> {
+  if (!pool) return readJson(filename) ?? seedDocument(filename);
+  await pool.query(`CREATE TABLE IF NOT EXISTS public.site_content_store (key VARCHAR(64) PRIMARY KEY, payload JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+  const result = await pool.query("SELECT payload FROM public.site_content_store WHERE key = $1", [key]);
+  return result.rows[0]?.payload ?? seedDocument(filename);
+}
+
+// Mutations serialize on the relevant row across application instances. Local
+// writes use a separate atomic runtime file, preserving the checked-in seed.
+async function mutateDocument<T>(filename: string, key: string, fn: (value: any) => T): Promise<T> {
+  if (!pool) {
+    if (IS_SERVERLESS) throw new Error("DATABASE_URL is required for durable serverless writes.");
+    const value = readJson(filename) ?? seedDocument(filename);
+    const result = fn(value);
+    writeJson(filename, value);
+    return result;
   }
-
-  return {
-    ...def,
-    ...parsed,
-  };
+  await pool.query(`CREATE TABLE IF NOT EXISTS public.site_content_store (key VARCHAR(64) PRIMARY KEY, payload JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("INSERT INTO public.site_content_store (key, payload, updated_at) VALUES ($1, $2::jsonb, NOW()) ON CONFLICT (key) DO NOTHING", [key, JSON.stringify(seedDocument(filename))]);
+    const row = await client.query("SELECT payload FROM public.site_content_store WHERE key = $1 FOR UPDATE", [key]);
+    const value = row.rows[0].payload;
+    const result = fn(value);
+    await client.query("UPDATE public.site_content_store SET payload = $2::jsonb, updated_at = NOW() WHERE key = $1", [key, JSON.stringify(value)]);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) { await client.query("ROLLBACK"); throw error; }
+  finally { client.release(); }
 }
 
-export function saveSiteContent(newUpdates: any) {
-  const current = getSiteContent();
-  const updated = {
-    ...current,
-    ...newUpdates,
-    lastUpdated: new Date().toISOString(),
-  };
-  writeJson(CONTENT_FILENAME, updated);
-  return updated;
+export async function getSiteContent() {
+  const parsed = await readDocument(CONTENT_FILENAME, "site_content_v1");
+  return { ...getDefaultContent(), ...parsed };
 }
-
-export function resetSiteContent() {
-  const def = getDefaultContent();
-  writeJson(CONTENT_FILENAME, def);
-  return def;
+export async function saveSiteContent(newUpdates: any) {
+  if (!newUpdates || typeof newUpdates !== "object" || Array.isArray(newUpdates)) throw new Error("Invalid content payload.");
+  return mutateDocument(CONTENT_FILENAME, "site_content_v1", value => {
+    Object.assign(value, newUpdates, { lastUpdated: new Date().toISOString() });
+    return { ...getDefaultContent(), ...value };
+  });
 }
-
-export function getSubmissions() {
-  const parsed = readJson(SUBMISSIONS_FILENAME);
-  if (!parsed) {
-    const initial = { contactMessages: [], registrations: [] };
-    writeJson(SUBMISSIONS_FILENAME, initial);
-    return initial;
-  }
-  return {
-    contactMessages: Array.isArray(parsed.contactMessages) ? parsed.contactMessages : [],
-    registrations: Array.isArray(parsed.registrations) ? parsed.registrations : [],
-  };
+export async function resetSiteContent() {
+  return mutateDocument(CONTENT_FILENAME, "site_content_v1", value => {
+    Object.keys(value).forEach(k => delete value[k]);
+    Object.assign(value, getDefaultContent());
+    return value;
+  });
 }
-
-export function saveSubmissions(submissions: any) {
-  writeJson(SUBMISSIONS_FILENAME, submissions);
-  return submissions;
+export async function getSubmissions(): Promise<Submissions> {
+  const parsed = await readDocument(SUBMISSIONS_FILENAME, "site_submissions_v1");
+  return { registrations: Array.isArray(parsed.registrations) ? parsed.registrations : [], contactMessages: Array.isArray(parsed.contactMessages) ? parsed.contactMessages : [] };
 }
-
-export function recordRegistration(data: {
-  fullName: string;
-  email: string;
-  phone: string;
-  category: string;
-  program: string;
-  message?: string;
-}) {
-  const current = getSubmissions();
-  const nextId = (current.registrations?.[0]?.id || 0) + 1;
-  const newRecord = {
-    id: nextId,
-    ...data,
-    status: "Pending",
-    createdAt: new Date().toISOString(),
-  };
-  current.registrations = [newRecord, ...(current.registrations || [])];
-  saveSubmissions(current);
-  return newRecord;
+export async function recordRegistration(data: { fullName: string; email: string; phone: string; category: string; program: string; message?: string }) {
+  return mutateDocument(SUBMISSIONS_FILENAME, "site_submissions_v1", current => {
+    current.registrations ||= [];
+    const id = Math.max(0, ...current.registrations.map((r: any) => Number(r.id) || 0)) + 1;
+    const record = { id, ...data, status: "Pending", createdAt: new Date().toISOString() };
+    current.registrations.unshift(record);
+    return record;
+  });
 }
-
-export function recordContactMessage(data: {
-  fullName: string;
-  email: string;
-  phone?: string;
-  category: string;
-  subject: string;
-  message: string;
-}) {
-  const current = getSubmissions();
-  const nextId = (current.contactMessages?.[0]?.id || 0) + 1;
-  const newRecord = {
-    id: nextId,
-    ...data,
-    status: "New",
-    createdAt: new Date().toISOString(),
-  };
-  current.contactMessages = [newRecord, ...(current.contactMessages || [])];
-  saveSubmissions(current);
-  return newRecord;
+export async function recordContactMessage(data: { fullName: string; email: string; phone?: string; category: string; subject: string; message: string }) {
+  return mutateDocument(SUBMISSIONS_FILENAME, "site_submissions_v1", current => {
+    current.contactMessages ||= [];
+    const id = Math.max(0, ...current.contactMessages.map((r: any) => Number(r.id) || 0)) + 1;
+    const record = { id, ...data, status: "New", createdAt: new Date().toISOString() };
+    current.contactMessages.unshift(record);
+    return record;
+  });
 }
-
-export function deleteSubmission(type: "registrations" | "contactMessages", id: number) {
-  const current = getSubmissions();
-  if (current[type]) {
-    current[type] = current[type].filter((item: any) => item.id !== id);
-    saveSubmissions(current);
-    return true;
-  }
-  return false;
+export async function deleteSubmission(type: "registrations" | "contactMessages", id: number) {
+  if (!["registrations", "contactMessages"].includes(type)) throw new Error("Invalid submission type.");
+  return mutateDocument(SUBMISSIONS_FILENAME, "site_submissions_v1", current => {
+    const items = current[type] || [];
+    current[type] = items.filter((item: any) => item.id !== id);
+    return items.length !== current[type].length;
+  });
 }
-
-export function updateSubmissionStatus(type: "registrations" | "contactMessages", id: number, status: string) {
-  const current = getSubmissions();
-  if (current[type]) {
-    const item = current[type].find((s: any) => s.id === id);
-    if (item) {
-      item.status = status;
-      saveSubmissions(current);
-      return item;
-    }
-  }
-  return null;
+export async function updateSubmissionStatus(type: "registrations" | "contactMessages", id: number, status: string) {
+  if (!["registrations", "contactMessages"].includes(type)) throw new Error("Invalid submission type.");
+  return mutateDocument(SUBMISSIONS_FILENAME, "site_submissions_v1", current => {
+    const item = (current[type] || []).find((s: any) => s.id === id);
+    if (item) item.status = status;
+    return item ?? null;
+  });
 }

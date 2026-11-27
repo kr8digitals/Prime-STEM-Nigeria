@@ -32,6 +32,7 @@
 # runtime proctoring recordings vault & local runtime caches (wipeable, never commit raw videos)
 /data/proctoring-vault/
 /data/exam-system.json
+/data/runtime/
 /data/*.tmp
 
 # typescript

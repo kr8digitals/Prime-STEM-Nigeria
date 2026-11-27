@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/db";
-import { contactMessages } from "@/db/schema";
 import { recordContactMessage } from "@/lib/content-store";
 import {
   sendAdminAlertEmail,
@@ -31,7 +29,7 @@ export async function POST(request: Request) {
 
     const { fullName, email, phone, category, subject, message } = parsed.data;
 
-    const saved = recordContactMessage({
+    const saved = await recordContactMessage({
       fullName,
       email,
       phone,
@@ -39,19 +37,6 @@ export async function POST(request: Request) {
       subject,
       message,
     });
-
-    try {
-      await db.insert(contactMessages).values({
-        fullName,
-        email,
-        phone: phone || null,
-        category,
-        subject,
-        message,
-      });
-    } catch (dbErr) {
-      console.warn("DB insert fallback:", dbErr);
-    }
 
     await Promise.allSettled([
       sendContactAcknowledgementEmail({

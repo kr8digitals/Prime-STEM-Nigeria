@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const denied = requireAdminAuth(request);
   if (denied) return denied;
 
-  const data = getSubmissions();
+  const data = await getSubmissions();
   return NextResponse.json(data, {
     headers: { "Cache-Control": "no-store" },
   });
@@ -31,7 +31,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Missing type or id" }, { status: 400 });
     }
 
-    const success = deleteSubmission(type, id);
+    const success = await deleteSubmission(type, id);
     return NextResponse.json({ success });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -50,7 +50,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const updated = updateSubmissionStatus(type, Number(id), status);
+    const updated = await updateSubmissionStatus(type, Number(id), status);
     return NextResponse.json({ success: true, item: updated });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

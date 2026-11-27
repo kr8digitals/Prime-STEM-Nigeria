@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/db";
-import { registrations } from "@/db/schema";
 import { recordRegistration } from "@/lib/content-store";
 import {
   sendAdminAlertEmail,
@@ -80,7 +78,7 @@ export async function POST(request: Request) {
     }
 
     // 1. Always preserve registration in Admin Powerhouse submissions store
-    const savedSubmission = recordRegistration({
+    const savedSubmission = await recordRegistration({
       fullName,
       email,
       phone,
@@ -94,20 +92,6 @@ export async function POST(request: Request) {
           }`
         : message,
     });
-
-    // 2. Also attempt DB insert if PostgreSQL is connected
-    try {
-      await db.insert(registrations).values({
-        fullName,
-        email,
-        phone,
-        category,
-        program,
-        message: message || null,
-      });
-    } catch (dbErr) {
-      console.warn("DB insert fallback:", dbErr);
-    }
 
     // 3. If registering for a scheduled Online Examination, create ExamCandidateRecord (pending Admin approval)
     if (examId && scheduleId) {
